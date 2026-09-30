@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | IconLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800&family=Anton&family=Teko:wght@500;600&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="{page}" data-nav="{nav}">'''
+
+<div class="page-head">
+    <div class="container">
+        <div class="crumb"><a href="index.html">Home</a> / Checkout</div>
+        <h1>إتمام <span style="color:var(--red)">الطلب</span></h1>
+        <p>الدفع عند الاستلام — املأ معلوماتك وسنتصل بك للتأكيد.</p>
+    </div>
+</div>
+<div class="container checkout-layout">
+    <form class="form-card" id="coForm" id="coBox">
+        <h3>📋 معلومات التوصيل</h3>
+        <div class="f-grid2">
+            <div class="f-row"><label>الاسم الكامل *</label><input class="f-input" name="name" required
+                    placeholder="الاسم واللقب"></div>
+            <div class="f-row"><label>رقم الهاتف *</label><input class="f-input" name="phone" required
+                    placeholder="05XXXXXXXX" pattern="0[0-9]{8,9}"></div>
+        </div>
+        <div class="f-grid2">
+            <div class="f-row"><label>الولاية *</label><select class="f-select" name="wilaya" id="wilaya"
+                    required></select></div>
+            <div class="f-row"><label>البلدية / العنوان *</label><input class="f-input" name="address" required
+                    placeholder="البلدية، الحي، الشارع..."></div>
+        </div>
+        <div class="f-row"><label>ملاحظات</label><textarea class="f-textarea" name="notes" rows="3"
+                placeholder="أي تفاصيل إضافية..."></textarea></div>
+        <button class="btn btn-red btn-block" style="padding:18px;font-size:14px">✓ تأكيد الطلب — الدفع عند
+            الاستلام</button>
+    </form>
+    <div class="cart-right" id="coSide">
+        <h3>طلبك</h3>
+        <div id="coItems" style="max-height:320px;overflow-y:auto"></div>
+        <div class="sumrow" style="margin-top:14px"><span>المجموع الفرعي</span><span id="coSub"></span></div>
+        <div class="sumrow"><span>التوصيل</span><span id="coDel"></span></div>
+        <div class="sumrow total"><span>الإجمالي</span><span id="coTotal"></span></div>
+    </div>
+</div>
+    <script src="js/data.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+
+</html>

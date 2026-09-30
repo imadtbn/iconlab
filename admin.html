@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | IconLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800&family=Anton&family=Teko:wght@500;600&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="{page}" data-nav="{nav}">'''
+
+<div class="container admin-wrap">
+    <div class="login-box" id="login" style="display:none">
+        <div class="logo" style="justify-content:center;margin-bottom:18px"><span
+                class="ball"></span>ICON<span>LAB</span></div>
+        <h2 style="font-size:30px;margin-bottom:6px">ADMIN ACCESS</h2>
+        <p style="color:var(--grey);font-size:12px;margin-bottom:22px">لوحة التحكم — أدخل كلمة المرور</p>
+        <form id="loginForm"><input class="f-input" type="password" id="pass" placeholder="Password"
+                style="text-align:center;margin-bottom:14px">
+            <button class="btn btn-red btn-block">دخول ←</button>
+        </form>
+    </div>
+    <div id="dash" style="display:none">
+        <div class="admin-top">
+            <div>
+                <div class="crumb">IconLab / Dashboard</div>
+                <h1 style="font-size:44px">لوحة <span style="color:var(--red)">التحكم</span></h1>
+            </div>
+            <button class="btn btn-outline btn-sm" id="logout">تسجيل الخروج ✕</button>
+        </div>
+        <div class="stat-cards" id="stats"></div>
+        <div class="tabs"><button class="tab active" data-t="orders">📦 Orders</button><button class="tab"
+                data-t="products">👕 Products</button></div>
+        <div id="adminBody"></div>
+    </div>
+</div>
+    <script src="js/data.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+
+</html>

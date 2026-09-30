@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | IconLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800&family=Anton&family=Teko:wght@500;600&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="{page}" data-nav="{nav}">'''
+
+<div class="page-head">
+    <div class="container">
+        <div class="crumb"><a href="index.html">Home</a> / Contact</div>
+        <h1>تواصل <span style="color:var(--red)">معنا</span></h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container" style="display:grid;grid-template-columns:1fr 1.2fr;gap:36px" id="contactWrap">
+        <div>
+            <div class="step" style="margin-bottom:14px">
+                <h3>📱 WhatsApp / Phone</h3>
+                <p style="direction:ltr;text-align:left">+213 555 12 34 56</p>
+            </div>
+            <div class="step" style="margin-bottom:14px">
+                <h3>📷 Instagram</h3>
+                <p>@iconlab.dz — راسلنا DM للطلب السريع</p>
+            </div>
+            <div class="step">
+                <h3>🎵 TikTok</h3>
+                <p>@iconlab.dz — شاهد أحدث التصاميم يومياً</p>
+            </div>
+        </div>
+        <form class="form-card" id="contactForm">
+            <h3>أرسل رسالة</h3>
+            <div class="f-row"><label>الاسم</label><input class="f-input" required placeholder="اسمك"></div>
+            <div class="f-row"><label>البريد / الهاتف</label><input class="f-input" required placeholder="للرد عليك">
+            </div>
+            <div class="f-row"><label>الرسالة</label><textarea class="f-textarea" rows="4" required
+                    placeholder="كيف نساعدك؟"></textarea></div>
+            <button class="btn btn-red btn-block">إرسال ✈</button>
+        </form>
+    </div>
+</section>
+<style>
+    @media(max-width:760px) {
+        #contactWrap {
+            grid-template-columns: 1fr
+        }
+    }
+</style>''')
+
+# ---------- FAQ ----------
+W("faq.html","FAQ","faq","FAQ",'''
+<div class="page-head">
+    <div class="container">
+        <div class="crumb"><a href="index.html">Home</a> / FAQ</div>
+        <h1>الأسئلة <span style="color:var(--gold)">الشائعة</span></h1>
+    </div>
+</div>
+<section class="section">
+    <div class="container" style="max-width:760px">
+        <details class="faq" open>
+            <summary>كيف أخصص قميصي؟</summary>
+            <div class="body">ادخل إلى صفحة "Customize"، اختر القميص واللون والمقاس، اكتب الاسم والرقم، اختر الخط ولون
+                الطباعة وأضف Patch — وسترى النتيجة مباشرة على القميص من الأمام والخلف قبل الإضافة للسلة.</div>
+        </details>
+        <details class="faq">
+            <summary>كم تستغرق مدة التوصيل؟</summary>
+            <div class="body">من 24 إلى 72 ساعة حسب ولايتك. الطلبات المخصصة تحتاج 24 ساعة إضافية للطباعة.</div>
+        </details>
+        <details class="faq">
+            <summary>ما هي طرق الدفع؟</summary>
+            <div class="body">الدفع عند الاستلام (Cash on Delivery) في جميع الولايات حالياً. سنوفر قريباً الدفع
+                الإلكتروني CIB والذهبية.</div>
+        </details>
+        <details class="faq">
+            <summary>هل يمكن استبدال القميص؟</summary>
+            <div class="body">القمصان المخصصة بالاسم والرقم لا تُستبدل إلا في حال خطأ من طباعتنا — نعيد طباعة القميص
+                مجاناً. القمصان العادية تُستبدل خلال 7 أيام بحالة أصلية.</div>
+        </details>
+        <details class="faq">
+            <summary>كيف أختار المقاس الصحيح؟</summary>
+            <div class="body">S (165-170cm) — M (170-175cm) — L (175-180cm) — XL (180-185cm) — XXL (185cm+). القمصان
+                بقصّة Player Fit ضيقة قليلاً.</div>
+        </details>
+        <details class="faq">
+            <summary>هل تتوفر خدمة الطباعة الجماعية للفرق؟</summary>
+            <div class="body">نعم! لطلبات الفرق والمدارس (+10 قمصان) راسلنا على WhatsApp بخصم خاص.</div>
+        </details>
+    </div>
+</section>
+
+    <script src="js/data.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+
+</html>

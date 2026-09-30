@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} | IconLab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800&family=Anton&family=Teko:wght@500;600&family=Oswald:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body data-page="{page}" data-nav="{nav}">'''
+
+<div class="container product-layout">
+    <div class="gallery">
+        <div class="main-view" id="mainView"></div>
+        <div class="view-tabs"><button class="view-tab active" data-view="front">Front</button><button class="view-tab"
+                data-view="back">Back</button></div>
+    </div>
+    <div>
+        <div class="crumb"><a href="index.html">Home</a> / <a href="shop.html">Shop</a> / Product</div>
+        <div class="p-team-lg" id="pTeam"></div>
+        <h1 class="p-title" id="pTitle"></h1>
+        <div class="p-price-lg" id="pPrice"></div>
+        <div id="stockLbl"></div>
+        <p class="p-desc" id="pDesc"></p>
+        <div class="opt-label"><span>اللون — Color</span></div>
+        <div class="swatches" id="swatches"></div>
+        <div class="opt-label"><span>المقاس — Size</span><b id="sizeGuide">Size Guide</b></div>
+        <div class="sizes" id="sizes"></div>
+        <div class="p-actions">
+            <button class="btn btn-red" id="addBtn" style="flex:1;min-width:180px">أضف إلى السلة 🛒</button>
+            <a class="btn btn-gold" id="customBtn" style="flex:1;min-width:180px">✦ خصّصه بنفسك</a>
+        </div>
+        <ul class="features-list">
+            <li>خامة أصلية متنفسة Dri-Fit</li>
+            <li>طباعة حرارية تدوم غسلة بعد غسلة</li>
+            <li>تخصيص مباشر: الاسم، الرقم، الخط، Patch</li>
+            <li>توصيل 24-72 ساعة لكل الولايات — دفع عند الاستلام</li>
+        </ul>
+    </div>
+</div>
+
+    <script src="js/data.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/pages.js"></script>
+</body>
+
+</html>
