@@ -153,6 +153,12 @@ function initCustomizer() {
     (cs.name ? 400 : 0) +
     (cs.number ? 300 : 0) +
     (cs.patch !== "none" ? 500 : 0);
+  const updateViewButtons = () => {
+    $$("#viewToggle button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.v === cs.view);
+    });
+  };
+
   const draw = () => {
     $("#stage").innerHTML = jerseySVG(p, {
       view: cs.view,
@@ -210,7 +216,8 @@ function initCustomizer() {
       }),
   );
   $("#csFonts").innerHTML = FONTS.map(
-    (f) => `<button class="chip" data-f="${f.id}">${f.name}</button>`,
+    (f) =>
+      `<button class="chip ${f.id === cs.font ? "active" : ""}" data-f="${f.id}">${f.name}</button>`,
   ).join("");
   $$("#csFonts .chip").forEach(
     (b) =>
@@ -218,12 +225,16 @@ function initCustomizer() {
         $$("#csFonts .chip").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         cs.font = b.dataset.f;
+        if (cs.view !== "back") {
+          cs.view = "back";
+          updateViewButtons();
+        }
         draw();
       }),
   );
   $("#csTextColors").innerHTML = TEXT_COLORS.map(
     (c) =>
-      `<div class="swatch" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex};${c.hex === "#15151a" ? "outline-color:#555" : ""}"></div>`,
+      `<div class="swatch ${c.hex === cs.textColor ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex};${c.hex === "#15151a" ? "outline-color:#555" : ""}"></div>`,
   ).join("");
   $$("#csTextColors .swatch").forEach(
     (s) =>
@@ -233,6 +244,10 @@ function initCustomizer() {
         );
         s.classList.add("active");
         cs.textColor = s.dataset.hex;
+        if (cs.view !== "back") {
+          cs.view = "back";
+          updateViewButtons();
+        }
         draw();
       }),
   );
@@ -251,12 +266,20 @@ function initCustomizer() {
   });
   $("#inName").oninput = (e) => {
     cs.name = e.target.value.slice(0, 14);
+    if (cs.view !== "back") {
+      cs.view = "back";
+      updateViewButtons();
+    }
     draw();
     summary();
   };
   $("#inNumber").oninput = (e) => {
     cs.number = e.target.value.replace(/\D/g, "").slice(0, 2);
     e.target.value = cs.number;
+    if (cs.view !== "back") {
+      cs.view = "back";
+      updateViewButtons();
+    }
     draw();
     summary();
   };
