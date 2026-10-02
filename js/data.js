@@ -129,6 +129,20 @@ const PATCHES = [
   { id: "ucl", name: "Champions League" },
   { id: "league", name: "League Badge" },
   { id: "star", name: "Star Ball" },
+  { id: "wc", name: "World Cup Badge" },
+];
+const CHEST_LOGOS = [
+  { id: "default", name: "Default Team Crest" },
+  { id: "qt_dragon", name: "QT Dragon Emblem" },
+  { id: "iconlab_star", name: "IconLab Star Crest" },
+  { id: "none", name: "Empty (No Logo)" },
+];
+const SPONSORS = [
+  { id: "default", name: "Default Team Sponsor" },
+  { id: "iconlab", name: "ICONLAB Streetwear" },
+  { id: "fly_emirates", name: "Emirates / Fly Better" },
+  { id: "spotify", name: "Spotify" },
+  { id: "none", name: "Empty (No Sponsor)" },
 ];
 const WILAYAS = [
   "الجزائر",
@@ -243,7 +257,7 @@ function renderHeader(active) {
   ).join("");
   const el = document.createElement("header");
   el.innerHTML = `<div class="container nav">
-    <a href="index.html" class="logo"><span class="ball"></span>ICON<span>LAB</span></a>
+    <a href="index.html" class="logo"><img src="assets/images/IMG-20261001-WA0000.jpg" alt="IconLab Logo" style="height:36px;width:36px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold)">ICON<span>LAB</span></a>
     <nav class="nav-links" id="navLinks">${links}<a href="admin.html" style="color:var(--gold)">Admin</a></nav>
     <div class="nav-icons">
       <a href="cart.html" class="icon-btn" title="Cart">🛒<span class="cart-count" id="cartCount" style="display:none">0</span></a>
@@ -264,7 +278,7 @@ function updateCartCount() {
 function renderFooter() {
   const el = document.createElement("footer");
   el.innerHTML = `<div class="container"><div class="footer-grid">
-    <div><a href="index.html" class="logo" style="margin-bottom:14px"><span class="ball"></span>ICON<span>LAB</span></a>
+    <div><a href="index.html" class="logo" style="margin-bottom:14px"><img src="assets/images/IMG-20261001-WA0000.jpg" alt="IconLab Logo" style="height:36px;width:36px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold)">ICON<span>LAB</span></a>
       <p style="color:var(--grey);font-size:13px;max-width:280px">متجرك المتخصص في قمصان كرة القدم مع تخصيص مباشر — اسمك، رقمك، شعارك. جودة برو، توصيل لكل الولايات.</p>
       <div class="socials"><a href="#" title="Instagram">📷</a><a href="#" title="TikTok">🎵</a><a href="#" title="Facebook">📘</a></div></div>
     <div><h4>Shop</h4><a href="shop.html">All Jerseys</a><a href="customizer.html">Customize Yours</a><a href="cart.html">Cart</a><a href="checkout.html">Checkout</a></div>
@@ -304,8 +318,12 @@ function jerseySVG(p, opt = {}) {
   const view = opt.view || "front";
   const fontCss = (FONTS.find((f) => f.id === opt.font) || FONTS[0]).css;
   const tc = opt.textColor || "#f2f2f0";
+  const logoColor = opt.logoColor || tc;
   const name = (opt.name || "").toUpperCase(),
     number = opt.number || "";
+  const chestLogo = opt.chestLogo || "default";
+  const sponsorOpt = opt.sponsor || "default";
+
   // ---- body path ----
   const body = `M122,64 L162,42 Q200,58 238,42 L278,64 L332,116 L306,168 L284,152 L284,428 Q200,452 116,428 L116,152 L94,168 L68,116 Z`;
   let inner = "";
@@ -323,10 +341,32 @@ function jerseySVG(p, opt = {}) {
   const sleeveLines = `<path d="M94,168 L68,116" stroke="${dk}" stroke-width="10" opacity=".5"/><path d="M306,168 L332,116" stroke="${dk}" stroke-width="10" opacity=".5"/>`;
   let front = "",
     back = "";
+
   if (view === "front") {
-    const crest = `<g transform="translate(140,180)"><path d="M0,0 L24,0 L24,16 Q24,30 12,36 Q0,30 0,16 Z" fill="${dark}"/><path d="M4,5 L20,5 L20,15 Q20,25 12,30 Q4,25 4,15 Z" fill="${accent}"/><text x="12" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="${isLight(hex) ? "#fff" : "#f2f2f0"}" font-family="Arial">${esc((p.team || "IL")[0])}</text></g>`;
-    const brand = `<text x="258" y="200" text-anchor="middle" font-size="15" font-weight="900" font-style="italic" fill="${dark}" font-family="Arial">IL</text>`;
-    const sponsor = `<text x="200" y="262" text-anchor="middle" font-size="22" font-weight="900" letter-spacing="4" fill="${isLight(hex) ? dk : "#f2f2f0"}" font-family="Arial" opacity=".9">${esc((p.team || "").split(" ")[0].toUpperCase().slice(0, 10))}</text>`;
+    // Chest Logo rendering
+    let crest = "";
+    if (chestLogo === "default") {
+      crest = `<g transform="translate(140,180)"><path d="M0,0 L24,0 L24,16 Q24,30 12,36 Q0,30 0,16 Z" fill="${dark}"/><path d="M4,5 L20,5 L20,15 Q20,25 12,30 Q4,25 4,15 Z" fill="${accent}"/><text x="12" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="${isLight(hex) ? "#fff" : "#f2f2f0"}" font-family="Arial">${esc((p.team || "IL")[0])}</text></g>`;
+    } else if (chestLogo === "qt_dragon") {
+      crest = `<g transform="translate(140,180)"><path d="M12,0 L24,12 L18,32 L6,32 L0,12 Z" fill="${logoColor}"/><text x="12" y="22" text-anchor="middle" font-size="12" font-weight="900" fill="${hex}">QT</text></g>`;
+    } else if (chestLogo === "iconlab_star") {
+      crest = `<g transform="translate(140,180)"><circle r="16" cx="12" cy="16" fill="${logoColor}"/><text x="12" y="21" text-anchor="middle" font-size="14" fill="${hex}">✦</text></g>`;
+    }
+
+    const brand = `<text x="258" y="200" text-anchor="middle" font-size="15" font-weight="900" font-style="italic" fill="${logoColor}" font-family="Arial">IL</text>`;
+
+    // Sponsor rendering
+    let sponsor = "";
+    if (sponsorOpt === "default") {
+      sponsor = `<text x="200" y="262" text-anchor="middle" font-size="22" font-weight="900" letter-spacing="4" fill="${logoColor}" font-family="Arial" opacity=".9">${esc((p.team || "").split(" ")[0].toUpperCase().slice(0, 10))}</text>`;
+    } else if (sponsorOpt === "iconlab") {
+      sponsor = `<text x="200" y="262" text-anchor="middle" font-size="22" font-weight="900" letter-spacing="5" fill="${logoColor}" font-family="Arial">ICONLAB</text>`;
+    } else if (sponsorOpt === "fly_emirates") {
+      sponsor = `<text x="200" y="258" text-anchor="middle" font-size="16" font-weight="900" letter-spacing="2" fill="${logoColor}" font-family="Arial">FLY EMIRATES</text>`;
+    } else if (sponsorOpt === "spotify") {
+      sponsor = `<g transform="translate(200,260)"><circle cx="-40" cy="-6" r="10" fill="${logoColor}"/><text x="0" y="0" text-anchor="middle" font-size="18" font-weight="900" letter-spacing="2" fill="${logoColor}" font-family="Arial">Spotify</text></g>`;
+    }
+
     front = crest + brand + sponsor;
   } else {
     const nm = name
@@ -349,6 +389,9 @@ function jerseySVG(p, opt = {}) {
     patch = `<g transform="translate(292,140)"><path d="M0,-16 L14,-10 L11,8 Q0,16 -11,8 L-14,-10 Z" fill="#c19a3d" stroke="#7a5c14" stroke-width="1.5"/></g>`;
   if (opt.patch === "star")
     patch = `<g transform="translate(292,140)"><circle r="15" fill="#fff" stroke="#999"/><text y="5" text-anchor="middle" font-size="11" fill="#111" font-family="Arial">✦</text></g>`;
+  if (opt.patch === "wc")
+    patch = `<g transform="translate(292,140)"><rect x="-12" y="-16" width="24" height="32" rx="4" fill="#d4af37"/><text y="5" text-anchor="middle" font-size="10" font-weight="800" fill="#111" font-family="Arial">2026</text></g>`;
+
   return `<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="jg${p.id + view}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".5" stop-color="${hex}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs>
     <ellipse cx="200" cy="468" rx="130" ry="14" fill="#000" opacity=".45"/>
