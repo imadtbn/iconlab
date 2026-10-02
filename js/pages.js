@@ -619,136 +619,257 @@ function initContact() {
 }
 
 /* ---------- ADMIN ---------- */
-function initAdmin() {
-  if (sessionStorage.getItem("il_admin") !== "1") {
-    $("#login").style.display = "block";
-    $("#dash").style.display = "none";
+let adminTab = "orders";
+let adminOrderQuery = "";
+let adminStatusFilter = "all";
+
+async function initAdmin() {
+  const db = window.IconLabDB;
+  const login = $("#login");
+  const dash = $("#dash");
+  const hint = $("#adminLoginHint");
+
+  if (!db?.isConfigured?.()) {
+    login.style.display = "block";
+    dash.style.display = "none";
+    hint.textContent = "لوحة الإدارة الآمنة تحتاج إعداد Supabase في js/config.js.";
     $("#loginForm").onsubmit = (e) => {
       e.preventDefault();
-      if ($("#pass").value === ADMIN_PASS) {
-        sessionStorage.setItem("il_admin", "1");
-        initAdmin();
-      } else toast("✕ كلمة مرور خاطئة");
+      toast("أكمل إعداد Supabase أولاً.");
     };
     return;
   }
-  $("#login").style.display = "none";
-  $("#dash").style.display = "block";
-  let tab = "orders";
-  const draw = () => {
-    const ps = getProducts(),
-      os = store.orders;
-    $("#stats").innerHTML = `
-      <div class="stat-card"><div class="v">${os.length}</div><div class="l">Orders</div></div>
-      <div class="stat-card"><div class="v">${os.filter((o) => o.status === "New").length}</div><div class="l">New Orders</div></div>
-      <div class="stat-card"><div class="v">${ps.length}</div><div class="l">Products</div></div>
-      <div class="stat-card"><div class="v">${money(os.filter((o) => o.status !== "Cancelled").reduce((a, o) => a + o.total, 0))}</div><div class="l">Revenue</div></div>`;
-    $$(".tab").forEach((t) =>
-      t.classList.toggle("active", t.dataset.t === tab),
-    );
-    const body = $("#adminBody");
-    if (tab === "orders") {
-      body.innerHTML = `<div class="table-card"><table><thead><tr><th>Order</th><th>Customer</th><th>Phone</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>
-      ${
-        os.length
-          ? os
-              .map(
-                (
-                  o,
-                  i,
-                ) => `<tr><td><b>${o.id}</b><br><span style="color:var(--grey);font-size:11px">${o.date}</span></td>
-        <td>${esc(o.customer.name)}<br><span style="color:var(--grey);font-size:11px">${esc(o.customer.wilaya)}</span></td>
-        <td>${esc(o.customer.phone)}</td><td><b style="color:var(--gold)">${money(o.total)}</b></td>
-        <td><span class="status st-${o.status}">${o.status}</span></td>
-        <td><button class="btn btn-dark btn-sm" onclick="viewOrder(${i})">View</button></td></tr>`,
-              )
-              .join("")
-          : `<tr><td colspan="6" style="text-align:center;color:var(--grey)">لا توجد طلبات بعد</td></tr>`
-      }</tbody></table></div>`;
-    } else {
-      body.innerHTML = `<div style="margin-bottom:16px"><button class="btn btn-red btn-sm" onclick="editProduct(null)">+ Add Product</button></div>
-      <div class="table-card"><table><thead><tr><th>Product</th><th>Price</th><th>Stock</th><th>Colors</th><th>Custom</th><th></th></tr></thead><tbody>
-      ${ps
-        .map(
-          (
-            p,
-          ) => `<tr><td><b>${esc(p.name)}</b><br><span style="color:var(--grey);font-size:11px">${esc(p.team)}</span></td>
-        <td><b style="color:var(--gold)">${money(p.price)}</b></td><td>${p.stock === 0 ? '<span class="stock-out">Out</span>' : p.stock}</td>
-        <td>${p.colors.map((c) => `<span class="dot" style="background:${c.hex};display:inline-block;margin-right:4px"></span>`).join("")}</td>
-        <td>${p.customizable ? '<span class="badge-soft gold">Yes</span>' : '<span class="badge-soft">No</span>'}</td>
-        <td style="white-space:nowrap"><button class="btn btn-dark btn-sm" onclick="editProduct('${p.id}')">Edit</button> <button class="btn btn-outline btn-sm" onclick="delProduct('${p.id}')">Delete</button></td></tr>`,
-        )
-        .join("")}</tbody></table></div>`;
-    }
+
+  const authenticated = await db.restoreAdminSession();
+  if (!authenticated) {
+    login.style.display = "block";
+    dash.style.display = "none";
+    hint.textContent = "أدخل حساب المشرف المسجل في Supabase Auth.";
+
+    $("#loginForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = $("#adminLoginBtn");
+      btn.disabled = true;
+      btn.textContent = "جاري التحقق...";
+      hint.textContent = "";
+      try {
+        await db.signInAdmin(
+          $("#adminEmail").value.trim(),
+          $("#adminPassword").value
+        );
+        toast("✓ تم تسجيل الدخول");
+        await initAdmin();
+      } catch (error) {
+        console.error(error);
+        const msg = String(error.message || error);
+        hint.textContent = msg.includes("ADMIN_NOT_AUTHORIZED")
+          ? "هذا الحساب صحيح لكنه غير مخول كمسؤول."
+          : "تعذر تسجيل الدخول. تحقق من البريد وكلمة المرور.";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "دخول آمن ←";
+      }
+    };
+    return;
+  }
+
+  login.style.display = "none";
+  dash.style.display = "block";
+  $("#adminIdentity").textContent = db.adminUser?.email || "Admin";
+
+  try {
+    await Promise.all([db.adminLoadOrders(), db.adminLoadProducts()]);
+  } catch (error) {
+    console.error(error);
+    toast("تعذر تحميل بيانات لوحة الإدارة");
+  }
+
+  $$(".tab").forEach((t) => {
+    t.onclick = async () => {
+      adminTab = t.dataset.t;
+      if (adminTab === "orders") await db.adminLoadOrders();
+      if (adminTab === "products") await db.adminLoadProducts();
+      renderAdminDashboard();
+    };
+  });
+
+  $("#logout").onclick = async () => {
+    await db.signOutAdmin();
+    toast("تم تسجيل الخروج");
+    await initAdmin();
   };
-  $$(".tab").forEach(
-    (t) =>
-      (t.onclick = () => {
-        tab = t.dataset.t;
-        draw();
-      }),
-  );
-  $("#logout").onclick = () => {
-    sessionStorage.removeItem("il_admin");
-    initAdmin();
-  };
-  draw();
+
+  renderAdminDashboard();
 }
-function viewOrder(i) {
-  const o = store.orders[i];
-  const sel = [
-    "New",
-    "Confirmed",
-    "Preparing",
-    "Shipped",
-    "Delivered",
-    "Cancelled",
-  ]
-    .map((s) => `<option ${s === o.status ? "selected" : ""}>${s}</option>`)
+
+function renderAdminDashboard() {
+  const ps = getProducts();
+  const os = store.orders;
+
+  $("#stats").innerHTML = `
+    <div class="stat-card"><div class="v">${os.length}</div><div class="l">إجمالي الطلبات</div></div>
+    <div class="stat-card"><div class="v">${os.filter((o) => o.status === "New").length}</div><div class="l">طلبات جديدة</div></div>
+    <div class="stat-card"><div class="v">${ps.length}</div><div class="l">المنتجات النشطة</div></div>
+    <div class="stat-card"><div class="v">${money(os.filter((o) => o.status !== "Cancelled").reduce((a, o) => a + Number(o.total || 0), 0))}</div><div class="l">قيمة الطلبات</div></div>`;
+
+  $$(".tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.t === adminTab)
+  );
+
+  const body = $("#adminBody");
+
+  if (adminTab === "orders") {
+    const q = adminOrderQuery.toLowerCase();
+    const list = os.filter((o) => {
+      const matchesQuery = !q || [
+        o.id,
+        o.customer?.name,
+        o.customer?.phone,
+        o.customer?.wilaya
+      ].some((v) => String(v || "").toLowerCase().includes(q));
+      const matchesStatus =
+        adminStatusFilter === "all" || o.status === adminStatusFilter;
+      return matchesQuery && matchesStatus;
+    });
+
+    body.innerHTML = `
+      <div class="admin-tools">
+        <input class="f-input" id="adminOrderSearch" placeholder="ابحث برقم الطلب، الاسم، الهاتف أو الولاية..." value="${esc(adminOrderQuery)}">
+        <select class="f-select" id="adminStatusFilter">
+          ${["all","New","Confirmed","Preparing","Shipped","Delivered","Cancelled"]
+            .map((s) => `<option value="${s}" ${s === adminStatusFilter ? "selected" : ""}>${s === "all" ? "كل الحالات" : s}</option>`)
+            .join("")}
+        </select>
+        <button class="btn btn-outline btn-sm" id="refreshOrders">تحديث ↻</button>
+      </div>
+      <div class="table-card"><table>
+        <thead><tr><th>الطلب</th><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>الحالة</th><th></th></tr></thead>
+        <tbody>
+          ${list.length ? list.map((o) => `
+            <tr>
+              <td><b>${esc(o.id)}</b><br><span style="color:var(--grey);font-size:11px">${esc(o.date || "")}</span></td>
+              <td>${esc(o.customer?.name)}<br><span style="color:var(--grey);font-size:11px">${esc(o.customer?.wilaya)}</span></td>
+              <td>${esc(o.customer?.phone)}</td>
+              <td><b style="color:var(--gold)">${money(Number(o.total || 0))}</b></td>
+              <td><span class="status st-${esc(o.status)}">${esc(o.status)}</span></td>
+              <td><button class="btn btn-dark btn-sm" onclick="viewOrder('${encodeURIComponent(o.id)}')">عرض</button></td>
+            </tr>`).join("") :
+            '<tr><td colspan="6" style="text-align:center;color:var(--grey)">لا توجد طلبات مطابقة</td></tr>'}
+        </tbody>
+      </table></div>`;
+
+    $("#adminOrderSearch").oninput = (e) => {
+      adminOrderQuery = e.target.value;
+      renderAdminDashboard();
+      requestAnimationFrame(() => {
+        const input = $("#adminOrderSearch");
+        input?.focus();
+        input?.setSelectionRange(input.value.length, input.value.length);
+      });
+    };
+    $("#adminStatusFilter").onchange = (e) => {
+      adminStatusFilter = e.target.value;
+      renderAdminDashboard();
+    };
+    $("#refreshOrders").onclick = async () => {
+      await window.IconLabDB.adminLoadOrders();
+      renderAdminDashboard();
+      toast("✓ تم تحديث الطلبات");
+    };
+    return;
+  }
+
+  body.innerHTML = `
+    <div class="admin-tools">
+      <button class="btn btn-red btn-sm" onclick="editProduct(null)">+ إضافة منتج</button>
+      <button class="btn btn-outline btn-sm" id="refreshProducts">تحديث ↻</button>
+    </div>
+    <div class="table-card"><table>
+      <thead><tr><th>المنتج</th><th>السعر</th><th>المخزون</th><th>الألوان</th><th>التخصيص</th><th></th></tr></thead>
+      <tbody>
+        ${ps.map((product) => `
+          <tr>
+            <td><b>${esc(product.name)}</b><br><span style="color:var(--grey);font-size:11px">${esc(product.team)}</span></td>
+            <td><b style="color:var(--gold)">${money(Number(product.price || 0))}</b></td>
+            <td>${Number(product.stock || 0) === 0 ? '<span class="stock-out">Out</span>' : Number(product.stock || 0)}</td>
+            <td>${(product.colors || []).map((c) => `<span class="dot" style="background:${c.hex};display:inline-block;margin-right:4px"></span>`).join("")}</td>
+            <td>${product.customizable ? '<span class="badge-soft gold">Yes</span>' : '<span class="badge-soft">No</span>'}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-dark btn-sm" onclick="editProduct('${product.id}')">تعديل</button>
+              <button class="btn btn-outline btn-sm" onclick="delProduct('${product.id}')">أرشفة</button>
+            </td>
+          </tr>`).join("")}
+      </tbody>
+    </table></div>`;
+
+  $("#refreshProducts").onclick = async () => {
+    await window.IconLabDB.adminLoadProducts();
+    renderAdminDashboard();
+    toast("✓ تم تحديث المنتجات");
+  };
+}
+
+function viewOrder(encodedId) {
+  const id = decodeURIComponent(encodedId);
+  const o = store.orders.find((x) => x.id === id);
+  if (!o) return toast("الطلب غير موجود");
+
+  const sel = ["New","Confirmed","Preparing","Shipped","Delivered","Cancelled"]
+    .map((s) => `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`)
     .join("");
-  openModal(`<button class="modal-close" onclick="closeModal()">✕</button><h3>Order ${o.id}</h3>
+
+  openModal(`<button class="modal-close" onclick="closeModal()">✕</button><h3>Order ${esc(o.id)}</h3>
     <div class="order-detail">
-      <div class="od-row"><span>Customer</span><b>${esc(o.customer.name)}</b></div>
-      <div class="od-row"><span>Phone</span><b>${esc(o.customer.phone)}</b></div>
-      <div class="od-row"><span>Wilaya</span><b>${esc(o.customer.wilaya)}</b></div>
-      <div class="od-row"><span>Address</span><b>${esc(o.customer.address)}</b></div>
-      <div class="od-row"><span>Notes</span><b>${esc(o.customer.notes)}</b></div>
-      <div class="od-row"><span>Date</span><b>${o.date}</b></div>
+      <div class="od-row"><span>Customer</span><b>${esc(o.customer?.name)}</b></div>
+      <div class="od-row"><span>Phone</span><b>${esc(o.customer?.phone)}</b></div>
+      <div class="od-row"><span>Wilaya</span><b>${esc(o.customer?.wilaya)}</b></div>
+      <div class="od-row"><span>Address</span><b>${esc(o.customer?.address)}</b></div>
+      <div class="od-row"><span>Notes</span><b>${esc(o.customer?.notes)}</b></div>
+      <div class="od-row"><span>Date</span><b>${esc(o.date || "")}</b></div>
     </div>
     <h4 style="margin:14px 0 8px;color:var(--gold)">ITEMS & CUSTOMIZATION</h4>
-    <div class="order-items-mini">${o.items
-      .map(
-        (
-          it,
-        ) => `<div class="oi"><img src="${it.preview}">${it.previewBack ? `<img src="${it.previewBack}">` : ""}<div><b>${esc(it.name)} ×${it.qty}</b> — <b style="color:var(--gold)">${money(it.price * it.qty)}</b>
-      <div class="d">${Object.entries(it.custom || {})
-        .map(([k, v]) => `${k}: <b>${esc(v)}</b>`)
-        .join(" · ")}</div></div></div>`,
-      )
-      .join("")}</div>
+    <div class="order-items-mini">${(o.items || []).map((it) =>
+      `<div class="oi"><img src="${it.preview}" alt="">${it.previewBack ? `<img src="${it.previewBack}" alt="">` : ""}
+        <div><b>${esc(it.name)} ×${it.qty}</b> — <b style="color:var(--gold)">${money(Number(it.price || 0) * Number(it.qty || 1))}</b>
+        <div class="d">${Object.entries(it.custom || {}).map(([k, v]) => `${esc(k)}: <b>${esc(v)}</b>`).join(" · ")}</div></div>
+      </div>`).join("")}</div>
     <div class="order-detail" style="margin-top:14px">
-      <div class="od-row"><span>Subtotal</span><b>${money(o.subtotal)}</b></div>
-      <div class="od-row"><span>Delivery</span><b>${o.delivery ? money(o.delivery) : "Free"}</b></div>
-      <div class="od-row"><span><b>Total (COD)</b></span><b style="color:var(--gold)">${money(o.total)}</b></div>
+      <div class="od-row"><span>Subtotal</span><b>${money(Number(o.subtotal || 0))}</b></div>
+      <div class="od-row"><span>Delivery</span><b>${o.delivery ? money(Number(o.delivery)) : "Free"}</b></div>
+      <div class="od-row"><span><b>Total (COD)</b></span><b style="color:var(--gold)">${money(Number(o.total || 0))}</b></div>
     </div>
-    <div class="f-row"><label>Order Status</label><select class="f-select" onchange="setStatus(${i},this.value)">${sel}</select></div>`);
+    <div class="f-row"><label>Order Status</label>
+      <select class="f-select" onchange="setStatus('${encodeURIComponent(o.id)}',this.value)">${sel}</select>
+    </div>`);
 }
-function setStatus(i, s) {
-  const o = store.orders;
-  o[i].status = s;
-  store.orders = o;
-  toast("✓ Status → " + s);
-  initAdmin();
-  closeModal();
+
+async function setStatus(encodedId, status) {
+  const id = decodeURIComponent(encodedId);
+  try {
+    await window.IconLabDB.adminUpdateOrderStatus(id, status);
+    toast("✓ Status → " + status);
+    closeModal();
+    renderAdminDashboard();
+  } catch (error) {
+    console.error(error);
+    toast("تعذر تحديث حالة الطلب");
+  }
 }
-function delProduct(id) {
-  if (!confirm("حذف هذا المنتج نهائياً؟")) return;
-  store.products = store.products.filter((p) => p.id !== id);
-  toast("تم الحذف");
-  initAdmin();
+
+async function delProduct(id) {
+  if (!confirm("أرشفة هذا المنتج وإخفاؤه من المتجر؟")) return;
+  try {
+    await window.IconLabDB.adminArchiveProduct(id);
+    toast("✓ تم أرشفة المنتج");
+    renderAdminDashboard();
+  } catch (error) {
+    console.error(error);
+    toast("تعذر أرشفة المنتج");
+  }
 }
+
 function editProduct(id) {
-  const p = id
+  const product = id
     ? getProduct(id)
     : {
         id: "",
@@ -763,56 +884,71 @@ function editProduct(id) {
         pattern: "plain",
         badge: "",
       };
+
   openModal(`<button class="modal-close" onclick="closeModal()">✕</button><h3>${id ? "Edit" : "Add"} Product</h3>
    <form onsubmit="saveProduct(event,'${id || ""}')">
-    <div class="f-grid2"><div class="f-row"><label>Name</label><input class="f-input" name="name" required value="${esc(p.name)}"></div>
-    <div class="f-row"><label>Team</label><input class="f-input" name="team" required value="${esc(p.team)}"></div></div>
-    <div class="f-grid2"><div class="f-row"><label>Price (DA)</label><input class="f-input" type="number" name="price" required value="${p.price}"></div>
-    <div class="f-row"><label>Stock</label><input class="f-input" type="number" name="stock" required value="${p.stock}"></div></div>
-    <div class="f-grid2"><div class="f-row"><label>Sizes (comma)</label><input class="f-input" name="sizes" value="${p.sizes.join(",")}"></div>
-    <div class="f-row"><label>Pattern</label><select class="f-select" name="pattern">${["plain", "stripes", "blaugrana", "retro"].map((x) => `<option ${x === p.pattern ? "selected" : ""}>${x}</option>`).join("")}</select></div></div>
-    <div class="f-row"><label>Colors (name:hex, comma)</label><input class="f-input" name="colors" value="${p.colors.map((c) => c.name + ":" + c.hex).join(",")}" placeholder="White:#f2f2f0, Black:#15151a"></div>
-    <div class="f-row"><label>Description</label><textarea class="f-textarea" name="description" rows="3">${esc(p.description)}</textarea></div>
-    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:18px"><input type="checkbox" name="customizable" ${p.customizable ? "checked" : ""}> Customizable (Live Designer)</label>
-    <button class="btn btn-red btn-block">${id ? "Save Changes" : "Add Product"}</button></form>`);
+    <div class="f-grid2"><div class="f-row"><label>Name</label><input class="f-input" name="name" required value="${esc(product.name)}"></div>
+    <div class="f-row"><label>Team</label><input class="f-input" name="team" required value="${esc(product.team)}"></div></div>
+    <div class="f-grid2"><div class="f-row"><label>Price (DA)</label><input class="f-input" type="number" min="0" name="price" required value="${product.price}"></div>
+    <div class="f-row"><label>Stock</label><input class="f-input" type="number" min="0" name="stock" required value="${product.stock}"></div></div>
+    <div class="f-grid2"><div class="f-row"><label>Sizes (comma)</label><input class="f-input" name="sizes" value="${(product.sizes || []).join(",")}"></div>
+    <div class="f-row"><label>Pattern</label><select class="f-select" name="pattern">${["plain","stripes","blaugrana","retro"].map((x) => `<option ${x === product.pattern ? "selected" : ""}>${x}</option>`).join("")}</select></div></div>
+    <div class="f-row"><label>Colors (name:hex, comma)</label><input class="f-input" name="colors" value="${(product.colors || []).map((c) => c.name + ":" + c.hex).join(",")}" placeholder="White:#f2f2f0, Black:#15151a"></div>
+    <div class="f-row"><label>Description</label><textarea class="f-textarea" name="description" rows="3">${esc(product.description)}</textarea></div>
+    <label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:18px"><input type="checkbox" name="customizable" ${product.customizable ? "checked" : ""}> Customizable (Live Designer)</label>
+    <button class="btn btn-red btn-block">${id ? "Save Changes" : "Add Product"}</button>
+   </form>`);
 }
-function saveProduct(e, id) {
+
+async function saveProduct(e, id) {
   e.preventDefault();
-  const f = new FormData(e.target);
+  const form = e.target;
+  const button = form.querySelector('button[type="submit"], button:not([type])');
+  const f = new FormData(form);
+
   const colors = String(f.get("colors"))
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
     .map((s) => {
-      const [name, hex] = s.split(":");
-      return { name: name.trim(), hex: (hex || "#999").trim() };
+      const pos = s.lastIndexOf(":");
+      const name = pos > -1 ? s.slice(0, pos) : s;
+      const hex = pos > -1 ? s.slice(pos + 1) : "#999999";
+      return { name: name.trim(), hex: hex.trim() || "#999999" };
     });
-  const p = {
+
+  const existing = id ? getProduct(id) : null;
+  const product = {
     id: id || "p-" + Date.now().toString(36),
-    name: f.get("name"),
-    team: f.get("team"),
-    price: +f.get("price"),
-    stock: +f.get("stock"),
-    sizes: String(f.get("sizes"))
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
+    name: String(f.get("name") || "").trim(),
+    team: String(f.get("team") || "").trim(),
+    price: Number(f.get("price") || 0),
+    stock: Number(f.get("stock") || 0),
+    sizes: String(f.get("sizes") || "")
+      .split(",").map((s) => s.trim()).filter(Boolean),
     colors,
     pattern: f.get("pattern"),
-    description: f.get("description"),
+    description: String(f.get("description") || "").trim(),
     customizable: !!f.get("customizable"),
-    badge: getProduct(id)?.badge || null,
-    oldPrice: getProduct(id)?.oldPrice || null,
+    badge: existing?.badge || null,
+    oldPrice: existing?.oldPrice || null,
   };
-  const ps = store.products;
-  const i = ps.findIndex((x) => x.id === id);
-  if (i > -1) ps[i] = p;
-  else ps.push(p);
-  store.products = ps;
-  closeModal();
-  toast("✓ Product saved");
-  initAdmin();
+
+  button.disabled = true;
+  button.textContent = "Saving...";
+  try {
+    await window.IconLabDB.adminSaveProduct(product);
+    closeModal();
+    toast("✓ Product saved");
+    renderAdminDashboard();
+  } catch (error) {
+    console.error(error);
+    toast("تعذر حفظ المنتج");
+    button.disabled = false;
+    button.textContent = id ? "Save Changes" : "Add Product";
+  }
 }
+
 function openModal(html) {
   let m = $("#modalBg");
   if (!m) {
