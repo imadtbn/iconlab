@@ -522,49 +522,88 @@ function initCheckout() {
     $("#coSide").style.display = "none";
     return;
   }
-  $("#wilaya").innerHTML = WILAYAS.map((w) => `<option>${w}</option>`).join("");
-  const sub = c.reduce((a, i) => a + i.price * i.qty, 0),
-    del = sub >= FREE_OVER ? 0 : DELIVERY_FEE,
-    total = sub + del;
+
+  const companies = getDeliveryCompanies();
+  if (!companies.length) {
+    $("#coForm").innerHTML =
+      `<div class="empty-state"><div class="big">التوصيل غير متاح حالياً</div><p>لم يتم تفعيل أي شركة توصيل من إعدادات المتجر.</p></div>`;
+    $("#coSide").style.display = "none";
+    return;
+  }
+
+  $("#deliveryCompany").innerHTML = companies
+    .map((company, index) =>
+      `<option value="${company.id}" ${index === 0 ? "selected" : ""}>${esc(company.name)} — ${money(company.price)}</option>`
+    )
+    .join("");
+
+  const sub = c.reduce((a, i) => a + i.price * i.qty, 0);
+  let selectedCompany = companies[0];
+
+  const renderTotals = () => {
+    const delivery = Number(selectedCompany?.price || 0);
+    $("#coSub").textContent = money(sub);
+    $("#coDel").textContent = money(delivery);
+    $("#coTotal").textContent = money(sub + delivery);
+    $("#deliveryPrice").textContent = money(delivery);
+  };
+
+  $("#deliveryCompany").onchange = (e) => {
+    selectedCompany = getDeliveryCompany(e.target.value) || companies[0];
+    renderTotals();
+  };
+
   $("#coItems").innerHTML = c
     .map(
       (i) =>
-        `<div class="checkout-item"><img src="${i.preview}"><div><div class="n">${esc(i.name)} ×${i.qty}</div><div class="s">${Object.entries(
+        `<div class="checkout-item"><img src="${i.preview}" alt=""><div><div class="n">${esc(i.name)} ×${i.qty}</div><div class="s">${Object.entries(
           i.custom || {},
         )
-          .map(([k, v]) => `${k}: ${esc(v)}`)
-          .join(
-            " · ",
-          )}</div></div><div class="p">${money(i.price * i.qty)}</div></div>`,
+          .map(([k, v]) => `${esc(k)}: ${esc(v)}`)
+          .join(" · ")}</div></div><div class="p">${money(i.price * i.qty)}</div></div>`,
     )
     .join("");
-  $("#coSub").textContent = money(sub);
-  $("#coDel").textContent = del ? money(del) : "مجاني";
-  $("#coTotal").textContent = money(total);
+
+  renderTotals();
+
   $("#coForm").onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
+    selectedCompany = getDeliveryCompany(f.get("deliveryCompany"));
+    if (!selectedCompany) return toast("اختر شركة التوصيل");
+
+    const delivery = Number(selectedCompany.price || 0);
+    const total = sub + delivery;
+
     const order = {
       id: "IL-" + Date.now().toString(36).toUpperCase(),
       date: new Date().toLocaleString("fr-DZ"),
       customer: {
-        name: f.get("name"),
-        phone: f.get("phone"),
-        wilaya: f.get("wilaya"),
-        address: f.get("address"),
-        notes: f.get("notes") || "—",
+        name: String(f.get("name") || "").trim(),
+        phone: String(f.get("phone") || "").trim(),
+        wilaya: String(f.get("wilaya") || "").trim(),
+        commune: String(f.get("commune") || "").trim(),
+        address: String(f.get("address") || "").trim(),
+        notes: String(f.get("notes") || "").trim() || "—",
+      },
+      shipping: {
+        companyId: selectedCompany.id,
+        companyName: selectedCompany.name,
+        price: delivery,
       },
       items: c,
       subtotal: sub,
-      delivery: del,
+      delivery,
       total,
       status: "New",
     };
+
     const submitBtn = e.target.querySelector('button[type="submit"], button:not([type])');
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = "جاري تسجيل الطلب...";
     }
+
     try {
       if (window.IconLabDB) await window.IconLabDB.createOrder(order);
       else {
@@ -584,6 +623,7 @@ function initCheckout() {
     }
   };
 }
+
 function initConfirmation() {
   const id = new URLSearchParams(location.search).get("id");
   const o = store.orders.find((x) => x.id === id);
@@ -823,7 +863,9 @@ function viewOrder(encodedId) {
       <div class="od-row"><span>Customer</span><b>${esc(o.customer?.name)}</b></div>
       <div class="od-row"><span>Phone</span><b>${esc(o.customer?.phone)}</b></div>
       <div class="od-row"><span>Wilaya</span><b>${esc(o.customer?.wilaya)}</b></div>
+      <div class="od-row"><span>Commune</span><b>${esc(o.customer?.commune || "—")}</b></div>
       <div class="od-row"><span>Address</span><b>${esc(o.customer?.address)}</b></div>
+      <div class="od-row"><span>Delivery Company</span><b>${esc(o.shipping?.companyName || "—")}</b></div>
       <div class="od-row"><span>Notes</span><b>${esc(o.customer?.notes)}</b></div>
       <div class="od-row"><span>Date</span><b>${esc(o.date || "")}</b></div>
     </div>
