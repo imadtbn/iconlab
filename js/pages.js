@@ -152,7 +152,7 @@ function setWizardStep(step) {
   }
 }
 
-function initCustomizer() {
+async function initCustomizer() {
   const id = new URLSearchParams(location.search).get("id");
   const p = getProduct(id) || getProducts().find((x) => x.customizable);
   const draftKey = "il_customizer_draft_" + p.id;
@@ -160,9 +160,16 @@ function initCustomizer() {
     name: { x: 0, y: 0, scale: 1, rotation: 0 },
     number: { x: 0, y: 0, scale: 1, rotation: 0 },
     crest: { x: 0, y: 0, scale: 1, rotation: 0 },
+    brand: { x: 0, y: 0, scale: 1, rotation: 0 },
     sponsor: { x: 0, y: 0, scale: 1, rotation: 0 },
     patch: { x: 0, y: 0, scale: 1, rotation: 0 },
   };
+
+  try {
+    await loadDesignAssets();
+  } catch (error) {
+    console.warn("[IconLab] Some real assets could not be loaded.", error);
+  }
 
   let savedDraft = null;
   try {
@@ -176,7 +183,8 @@ function initCustomizer() {
     number: savedDraft?.number || "",
     font: savedDraft?.font || "bebas",
     textColor: savedDraft?.textColor || "#f2f2f0",
-    chestLogo: savedDraft?.chestLogo || "default",
+    chestLogo: savedDraft?.chestLogo || getDefaultCrestForProduct(p),
+    brand: savedDraft?.brand || "nike",
     sponsor: savedDraft?.sponsor || "default",
     logoColor: savedDraft?.logoColor || "#f2f2f0",
     patch: savedDraft?.patch || "none",
@@ -197,6 +205,7 @@ function initCustomizer() {
     name: { label: "طبقة الاسم", view: "back" },
     number: { label: "طبقة الرقم", view: "back" },
     crest: { label: "شعار الصدر", view: "front" },
+    brand: { label: "الماركة", view: "front" },
     sponsor: { label: "الراعي", view: "front" },
     patch: { label: "رقعة الكم", view: "front" },
   };
@@ -210,6 +219,7 @@ function initCustomizer() {
       font: cs.font,
       textColor: cs.textColor,
       chestLogo: cs.chestLogo,
+      brand: cs.brand,
       sponsor: cs.sponsor,
       logoColor: cs.logoColor,
       patch: cs.patch,
@@ -324,6 +334,7 @@ function initCustomizer() {
     const patchObj = PATCHES.find((x) => x.id === cs.patch) || PATCHES[0];
     const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
     const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
+    const brandObj = BRANDS.find((x) => x.id === cs.brand) || BRANDS[0];
 
     rev.innerHTML = `
       <div class="spec-item"><span>القميص:</span><b>${esc(p.name)}</b></div>
@@ -333,6 +344,7 @@ function initCustomizer() {
       <div class="spec-item"><span>الرقم:</span><b>${esc(cs.number || "بدون رقم")}</b></div>
       <div class="spec-item"><span>نوع الخط:</span><b>${esc(fontObj.name)}</b></div>
       <div class="spec-item"><span>شعار الصدر:</span><b>${esc(chestObj.name)}</b></div>
+      <div class="spec-item"><span>الماركة:</span><b>${esc(brandObj.name)}</b></div>
       <div class="spec-item"><span>الراعي الرئيسي:</span><b>${esc(sponsorObj.name)}</b></div>
       <div class="spec-item"><span>رقعة الكم:</span><b>${esc(patchObj.name)}</b></div>
     `;
@@ -347,6 +359,7 @@ function initCustomizer() {
       font: cs.font,
       textColor: cs.textColor,
       chestLogo: cs.chestLogo,
+      brand: cs.brand,
       sponsor: cs.sponsor,
       logoColor: cs.logoColor,
       patch: cs.patch,
@@ -469,6 +482,15 @@ function initCustomizer() {
     selectLayer("crest");
   };
 
+  $("#selBrand").innerHTML = BRANDS.map((x) =>
+    `<option value="${x.id}" ${x.id === cs.brand ? "selected" : ""}>${x.name}</option>`
+  ).join("");
+  $("#selBrand").onchange = (e) => {
+    cs.brand = e.target.value;
+    persistDraft();
+    selectLayer("brand");
+  };
+
   $("#selSponsor").innerHTML = SPONSORS.map((x) =>
     `<option value="${x.id}" ${x.id === cs.sponsor ? "selected" : ""}>${x.name}</option>`
   ).join("");
@@ -585,30 +607,127 @@ function initCustomizer() {
     toast("تمت إعادة ضبط مواضع التصميم");
   };
 
+  const generateDesignRenders = async () => {
+    const front = await svgToPNG(jerseySVG(p, {
+      view: "front",
+      color: cs.color.hex,
+      chestLogo: cs.chestLogo,
+      brand: cs.brand,
+      sponsor: cs.sponsor,
+      logoColor: cs.logoColor,
+      patch: cs.patch,
+      transforms: cs.transforms,
+    }), 720, 900);
+    const back = await svgToPNG(jerseySVG(p, {
+      view: "back",
+      color: cs.color.hex,
+      name: cs.name,
+      number: cs.number,
+      font: cs.font,
+      textColor: cs.textColor,
+      patch: cs.patch,
+      transforms: cs.transforms,
+    }), 720, 900);
+    return { front, back };
+  };
+
+  const buildDesignPdfBlob = async () => {
+    if (!window.jspdf?.jsPDF) throw new Error("JSPDF_NOT_READY");
+    const { front, back } = await generateDesignRenders();
+    const designId = localStorage.getItem("il_last_design_id") ||
+      ("IL-DGN-" + Date.now().toString(36).toUpperCase());
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+    doc.setFillColor(14, 14, 16);
+    doc.rect(0, 0, 297, 210, "F");
+    doc.setTextColor(242, 242, 240);
+    doc.setFontSize(19);
+    doc.text("ICONLAB - JERSEY DESIGN SHEET", 14, 16);
+    doc.setFontSize(10);
+    doc.setTextColor(190, 190, 190);
+    doc.text("Design ID: " + designId, 14, 23);
+    doc.text("Product: " + String(p.name || ""), 14, 29);
+    doc.text("Size: " + String(cs.size || "-") + "   Color: " + String(cs.color?.name || "-"), 14, 35);
+    doc.text("Name: " + String(cs.name || "-") + "   Number: " + String(cs.number || "-"), 14, 41);
+
+    doc.setTextColor(212, 175, 55);
+    doc.setFontSize(12);
+    doc.text("FRONT", 80, 22, { align: "center" });
+    doc.text("BACK", 217, 22, { align: "center" });
+
+    doc.addImage(front, "PNG", 24, 28, 112, 150);
+    doc.addImage(back, "PNG", 161, 28, 112, 150);
+
+    doc.setDrawColor(70, 70, 76);
+    doc.line(148.5, 28, 148.5, 184);
+    doc.setTextColor(150, 150, 150);
+    doc.setFontSize(8);
+    doc.text("Generated by IconLab Design Studio", 14, 199);
+    return { blob: doc.output("blob"), designId, front, back };
+  };
+
+  $("#exportDesignPdf").onclick = async () => {
+    const btn = $("#exportDesignPdf");
+    btn.disabled = true;
+    btn.textContent = "جاري إنشاء PDF...";
+    try {
+      const { blob, designId } = await buildDesignPdfBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = designId + "-iconlab.pdf";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      toast("✓ تم تصدير PDF");
+    } catch (error) {
+      console.error(error);
+      toast("تعذر إنشاء ملف PDF");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "تصدير PDF";
+    }
+  };
+
+  $("#shareDesign").onclick = async () => {
+    const btn = $("#shareDesign");
+    btn.disabled = true;
+    btn.textContent = "جاري تجهيز المشاركة...";
+    try {
+      const { blob, designId } = await buildDesignPdfBlob();
+      const file = new File([blob], designId + "-iconlab.pdf", { type: "application/pdf" });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({
+          title: "IconLab Jersey Design",
+          text: "Design " + designId,
+          files: [file],
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = file.name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        toast("المشاركة غير مدعومة؛ تم تنزيل ملف PDF");
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error(error);
+        toast("تعذر مشاركة التصميم");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "مشاركة التصميم";
+    }
+  };
+
   $("#saveDesignDraft").onclick = async () => {
     const btn = $("#saveDesignDraft");
     btn.disabled = true;
     btn.textContent = "جاري الحفظ...";
     try {
-      const front = await svgToPNG(jerseySVG(p, {
-        view: "front",
-        color: cs.color.hex,
-        chestLogo: cs.chestLogo,
-        sponsor: cs.sponsor,
-        logoColor: cs.logoColor,
-        patch: cs.patch,
-        transforms: cs.transforms,
-      }));
-      const back = await svgToPNG(jerseySVG(p, {
-        view: "back",
-        color: cs.color.hex,
-        name: cs.name,
-        number: cs.number,
-        font: cs.font,
-        textColor: cs.textColor,
-        patch: cs.patch,
-        transforms: cs.transforms,
-      }));
+      const { front, back } = await generateDesignRenders();
       const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
       const design = {
         id: designId,
@@ -621,6 +740,7 @@ function initCustomizer() {
         font: cs.font,
         textColor: cs.textColor,
         chestLogo: cs.chestLogo,
+        brand: cs.brand,
         sponsor: cs.sponsor,
         logoColor: cs.logoColor,
         patch: cs.patch,
@@ -648,34 +768,13 @@ function initCustomizer() {
     if (!cs.size) return toast("⚠ اختر المقاس");
     if (p.stock === 0) return toast("✕ نفدت الكمية");
 
-    const front = await svgToPNG(
-      jerseySVG(p, {
-        view: "front",
-        color: cs.color.hex,
-        chestLogo: cs.chestLogo,
-        sponsor: cs.sponsor,
-        logoColor: cs.logoColor,
-        patch: cs.patch,
-        transforms: cs.transforms,
-      }),
-    );
-    const back = await svgToPNG(
-      jerseySVG(p, {
-        view: "back",
-        color: cs.color.hex,
-        name: cs.name,
-        number: cs.number,
-        font: cs.font,
-        textColor: cs.textColor,
-        patch: cs.patch,
-        transforms: cs.transforms,
-      }),
-    );
+    const { front, back } = await generateDesignRenders();
 
     const fontObj = FONTS.find((f) => f.id === cs.font) || FONTS[0];
     const patchObj = PATCHES.find((x) => x.id === cs.patch) || PATCHES[0];
     const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
     const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
+    const brandObj = BRANDS.find((x) => x.id === cs.brand) || BRANDS[0];
 
     const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
     const design = {
@@ -718,6 +817,7 @@ function initCustomizer() {
         number: cs.number || "—",
         font: fontObj.name,
         chestLogo: chestObj.name,
+        brand: brandObj.name,
         sponsor: sponsorObj.name,
         patch: patchObj.name,
       },
