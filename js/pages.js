@@ -411,8 +411,33 @@ function initCustomizer() {
     const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
     const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
 
+    const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
+    const design = {
+      id: designId,
+      productId: p.id,
+      createdAt: new Date().toISOString(),
+      size: cs.size,
+      color: cs.color,
+      name: cs.name,
+      number: cs.number,
+      font: cs.font,
+      textColor: cs.textColor,
+      chestLogo: cs.chestLogo,
+      sponsor: cs.sponsor,
+      logoColor: cs.logoColor,
+      patch: cs.patch,
+      previewFront: front,
+      previewBack: back
+    };
+    try {
+      if (window.IconLabDB) await window.IconLabDB.createDesign(design);
+    } catch (error) {
+      console.warn("[IconLab] Design kept locally; remote save failed.", error);
+    }
+
     addToCart({
       productId: p.id,
+      designId,
       name: p.name + " (مخصص)",
       price: price(),
       qty: 1,
