@@ -135,6 +135,15 @@ function isLight(hex) {
     ((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11 > 150
   );
 }
+function studioTransform(transforms, key, cx, cy) {
+  const t = transforms?.[key] || {};
+  const x = Number(t.x || 0);
+  const y = Number(t.y || 0);
+  const scale = Math.max(0.45, Math.min(2.2, Number(t.scale || 1)));
+  const rotation = Number(t.rotation || 0);
+  return `translate(${x} ${y}) translate(${cx} ${cy}) rotate(${rotation}) scale(${scale}) translate(${-cx} ${-cy})`;
+}
+
 function jerseySVG(p, opt = {}) {
   const hex = opt.color || p.colors[0].hex;
   const dk = darken(hex, 0.72),
@@ -156,6 +165,7 @@ function jerseySVG(p, opt = {}) {
     number = opt.number || "";
   const chestLogo = opt.chestLogo || "default";
   const sponsorOpt = opt.sponsor || "default";
+  const transforms = opt.transforms || {};
 
   // ---- body path ----
   const body = `M122,64 L162,42 Q200,58 238,42 L278,64 L332,116 L306,168 L284,152 L284,428 Q200,452 116,428 L116,152 L94,168 L68,116 Z`;
@@ -200,7 +210,10 @@ function jerseySVG(p, opt = {}) {
       sponsor = `<g transform="translate(200,260)"><circle cx="-40" cy="-6" r="10" fill="${logoColor}"/><text x="0" y="0" text-anchor="middle" font-size="18" font-weight="900" letter-spacing="2" fill="${logoColor}" font-family="Arial">Spotify</text></g>`;
     }
 
-    front = crest + brand + sponsor;
+    front =
+      `<g data-layer="crest" class="studio-layer" transform="${studioTransform(transforms, "crest", 152, 198)}">${crest}</g>` +
+      brand +
+      `<g data-layer="sponsor" class="studio-layer" transform="${studioTransform(transforms, "sponsor", 200, 260)}">${sponsor}</g>`;
   } else {
     const nm = name
       ? `<text x="200" y="168" text-anchor="middle" font-size="34" font-weight="700" letter-spacing="3" fill="${tc}" style="font-family:${fontCss}">${esc(name)}</text>`
@@ -224,6 +237,9 @@ function jerseySVG(p, opt = {}) {
     patch = `<g transform="translate(292,140)"><circle r="15" fill="#fff" stroke="#999"/><text y="5" text-anchor="middle" font-size="11" fill="#111" font-family="Arial">✦</text></g>`;
   if (opt.patch === "wc")
     patch = `<g transform="translate(292,140)"><rect x="-12" y="-16" width="24" height="32" rx="4" fill="#d4af37"/><text y="5" text-anchor="middle" font-size="10" font-weight="800" fill="#111" font-family="Arial">2026</text></g>`;
+  if (patch) {
+    patch = `<g data-layer="patch" class="studio-layer" transform="${studioTransform(transforms, "patch", 292, 140)}">${patch}</g>`;
+  }
 
   return `<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="jg${p.id + view}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${lt}"/><stop offset=".5" stop-color="${hex}"/><stop offset="1" stop-color="${dk}"/></linearGradient></defs>
