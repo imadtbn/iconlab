@@ -1830,3 +1830,195 @@ tbody tr:hover {
     font-size: 22px;
   }
 }
+
+/* ---------- ICONLAB DESIGN STUDIO ---------- */
+.studio-toolbar {
+  margin-top: 18px;
+  padding: 16px;
+  background: rgba(10,10,12,.72);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  text-align: right;
+}
+.studio-toolbar-head,
+.studio-toolbar-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.studio-toolbar-head strong {
+  display: block;
+  color: var(--white);
+  font-size: 14px;
+}
+.studio-history {
+  display: flex;
+  gap: 6px;
+}
+.studio-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--white);
+  font-size: 19px;
+}
+.studio-icon-btn:disabled {
+  opacity: .35;
+}
+.studio-layer-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin: 14px 0;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.studio-layer-tabs button {
+  flex: 0 0 auto;
+  padding: 9px 13px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--dark);
+  color: var(--grey);
+  font-size: 11px;
+  font-weight: 800;
+}
+.studio-layer-tabs button.active {
+  border-color: var(--gold);
+  background: rgba(212,175,55,.12);
+  color: var(--gold);
+}
+.studio-controls {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+.studio-move-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.studio-move-pad button,
+.studio-adjust-grid button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card2);
+  color: var(--white);
+  font-weight: 800;
+}
+.studio-move-pad button:active,
+.studio-adjust-grid button:active {
+  border-color: var(--gold);
+  transform: scale(.97);
+}
+.studio-adjust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.studio-toolbar-foot {
+  margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+.studio-toolbar-foot span {
+  color: var(--grey);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.preview-stage svg {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.studio-layer {
+  cursor: grab;
+  pointer-events: all;
+}
+.studio-layer:active {
+  cursor: grabbing;
+}
+.studio-selected {
+  filter: drop-shadow(0 0 4px rgba(212,175,55,.95));
+}
+@media (max-width: 960px) {
+  .custom-layout {
+    gap: 18px;
+  }
+  .custom-preview {
+    order: -1;
+    position: static;
+  }
+}
+@media (max-width: 640px) {
+  .wizard-wrapper {
+    padding-inline: 0;
+  }
+  .custom-layout {
+    padding-top: 0;
+    gap: 12px;
+  }
+  .custom-preview {
+    border-radius: 0;
+    border-inline: 0;
+    padding: 12px;
+  }
+  .preview-stage {
+    min-height: 250px;
+  }
+  .preview-stage svg {
+    height: min(310px, 72vw);
+  }
+  .view-toggle {
+    width: 100%;
+    display: flex;
+  }
+  .view-toggle button {
+    flex: 1;
+    padding: 10px 12px;
+  }
+  .studio-toolbar {
+    padding: 12px;
+    margin-top: 12px;
+  }
+  .studio-toolbar-head {
+    align-items: flex-start;
+  }
+  .studio-controls {
+    grid-template-columns: 118px 1fr;
+    gap: 8px;
+  }
+  .studio-move-pad button,
+  .studio-adjust-grid button {
+    min-height: 46px;
+    font-size: 12px;
+  }
+  .studio-toolbar-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .studio-toolbar-foot .btn {
+    width: 100%;
+  }
+  .custom-panel {
+    border-radius: 0;
+    border-inline: 0;
+    padding: 18px 14px 24px;
+  }
+  .custom-panel h2 {
+    font-size: 25px;
+  }
+  .wizard-steps {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--black);
+    margin-bottom: 10px;
+    padding-top: 8px;
+  }
+}
