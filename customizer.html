@@ -58,6 +58,7 @@
                     <button type="button" data-layer="name" class="active">الاسم</button>
                     <button type="button" data-layer="number">الرقم</button>
                     <button type="button" data-layer="crest">الشعار</button>
+                    <button type="button" data-layer="brand">الماركة</button>
                     <button type="button" data-layer="sponsor">الراعي</button>
                     <button type="button" data-layer="patch">الرقعة</button>
                 </div>
@@ -146,6 +147,7 @@
                 <div class="qt-sidebar-layout">
                     <div class="qt-tabs-v" id="qtCategoryTabs">
                         <button class="v-tab active" data-cat="chest">Logo Chest</button>
+                        <button class="v-tab" data-cat="brand">Brand</button>
                         <button class="v-tab" data-cat="sponsor">Sponsor</button>
                         <button class="v-tab" data-cat="patch">Sleeve Patch</button>
                         <button class="v-tab" data-cat="logocolor">Logo Color</button>
@@ -156,6 +158,12 @@
                         <div class="cat-content active" data-cat-content="chest">
                             <label>شعار الصدر (Logo Chest)</label>
                             <select class="f-select" id="selChestLogo"></select>
+                        </div>
+
+                        <!-- Brand Category -->
+                        <div class="cat-content" data-cat-content="brand">
+                            <label>العلامة الرياضية (Brand)</label>
+                            <select class="f-select" id="selBrand"></select>
                         </div>
 
                         <!-- Sponsor Category -->
@@ -197,7 +205,11 @@
                     <div class="total"><span>المجموع الإجمالي</span><span id="sumTotal"></span></div>
                 </div>
 
-                <div class="step-actions" style="margin-top:20px">
+                <div class="design-export-actions">
+                    <button type="button" class="btn btn-outline" id="exportDesignPdf">تصدير PDF</button>
+                    <button type="button" class="btn btn-outline" id="shareDesign">مشاركة التصميم</button>
+                </div>
+                <div class="step-actions" style="margin-top:14px">
                     <button class="btn btn-outline btn-prev" onclick="setWizardStep(4)">← تعديل التخصيص</button>
                     <button class="btn btn-red" id="addCustom" style="padding:16px 28px;font-size:15px">أضف القميص المخصص للسلة 🛒</button>
                 </div>
@@ -206,6 +218,7 @@
     </div>
 </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
     <script src="js/config.js"></script>
     <script src="js/data.js"></script>
     <script src="js/database.js"></script>
