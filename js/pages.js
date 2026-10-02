@@ -1,5 +1,5 @@
 /* ============ PAGE CONTROLLERS ============ */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const page = document.body.dataset.page;
   renderHeader(document.body.dataset.nav || "");
   renderFooter();
@@ -491,7 +491,7 @@ function rmItem(i) {
 function initCheckout() {
   const c = store.cart;
   if (!c.length) {
-    $("#coBox").innerHTML =
+    $("#coForm").innerHTML =
       `<div class="empty-state"><div class="big">لا يوجد طلب</div><p>أضف منتجات إلى السلة أولاً.</p><br><a class="btn btn-red" href="shop.html">تصفح المتجر</a></div>`;
     $("#coSide").style.display = "none";
     return;
@@ -515,7 +515,7 @@ function initCheckout() {
   $("#coSub").textContent = money(sub);
   $("#coDel").textContent = del ? money(del) : "مجاني";
   $("#coTotal").textContent = money(total);
-  $("#coForm").onsubmit = (e) => {
+  $("#coForm").onsubmit = async (e) => {
     e.preventDefault();
     const f = new FormData(e.target);
     const order = {
