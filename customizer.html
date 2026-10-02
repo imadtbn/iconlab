@@ -40,6 +40,50 @@
                 <button class="active" data-v="front">Front</button>
                 <button data-v="back">Back</button>
             </div>
+
+            <div class="studio-toolbar" id="studioToolbar">
+                <div class="studio-toolbar-head">
+                    <div>
+                        <span class="section-sub">Design Studio</span>
+                        <strong id="activeLayerLabel">طبقة الاسم</strong>
+                    </div>
+                    <div class="studio-history">
+                        <button type="button" class="studio-icon-btn" id="undoDesign" aria-label="تراجع">↶</button>
+                        <button type="button" class="studio-icon-btn" id="redoDesign" aria-label="إعادة">↷</button>
+                        <button type="button" class="studio-icon-btn" id="resetDesign" aria-label="إعادة ضبط">⟳</button>
+                    </div>
+                </div>
+
+                <div class="studio-layer-tabs" id="studioLayerTabs">
+                    <button type="button" data-layer="name" class="active">الاسم</button>
+                    <button type="button" data-layer="number">الرقم</button>
+                    <button type="button" data-layer="crest">الشعار</button>
+                    <button type="button" data-layer="sponsor">الراعي</button>
+                    <button type="button" data-layer="patch">الرقعة</button>
+                </div>
+
+                <div class="studio-controls">
+                    <div class="studio-move-pad" aria-label="تحريك الطبقة">
+                        <span></span>
+                        <button type="button" data-move="0,-6" aria-label="أعلى">↑</button>
+                        <span></span>
+                        <button type="button" data-move="-6,0" aria-label="يمين">→</button>
+                        <button type="button" data-move="0,6" aria-label="أسفل">↓</button>
+                        <button type="button" data-move="6,0" aria-label="يسار">←</button>
+                    </div>
+                    <div class="studio-adjust-grid">
+                        <button type="button" data-scale="-0.08">− تصغير</button>
+                        <button type="button" data-scale="0.08">+ تكبير</button>
+                        <button type="button" data-rotate="-5">↺ تدوير</button>
+                        <button type="button" data-rotate="5">↻ تدوير</button>
+                    </div>
+                </div>
+
+                <div class="studio-toolbar-foot">
+                    <span>يمكنك أيضًا سحب العنصر مباشرة بإصبعك داخل القميص.</span>
+                    <button type="button" class="btn btn-outline btn-sm" id="saveDesignDraft">حفظ التصميم</button>
+                </div>
+            </div>
         </div>
 
         <div class="custom-panel">
