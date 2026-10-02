@@ -218,7 +218,7 @@ function jerseySVG(p, opt = {}) {
       crest = assetImage("real-madrid-crest", 136, 176, 34, 42);
     } else if (chestLogo === "psg" && designAssetHref("psg-crest")) {
       crest = assetImage("psg-crest", 136, 178, 36, 36);
-    } else if (chestLogo === "default") {
+    } else if (chestLogo === "default" || chestLogo === "real_madrid" || chestLogo === "psg") {
       crest = `<g transform="translate(140,180)"><path d="M0,0 L24,0 L24,16 Q24,30 12,36 Q0,30 0,16 Z" fill="${dark}"/><path d="M4,5 L20,5 L20,15 Q20,25 12,30 Q4,25 4,15 Z" fill="${accent}"/><text x="12" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="${isLight(hex) ? "#fff" : "#f2f2f0"}" font-family="Arial">${esc((p.team || "IL")[0])}</text></g>`;
     } else if (chestLogo === "iconlab_star") {
       crest = `<g transform="translate(140,180)"><circle r="16" cx="12" cy="16" fill="${logoColor}"/><text x="12" y="21" text-anchor="middle" font-size="14" fill="${hex}">✦</text></g>`;
@@ -227,7 +227,7 @@ function jerseySVG(p, opt = {}) {
     let brand = "";
     if (brandOpt === "nike" && designAssetHref("nike-logo")) {
       brand = assetImage("nike-logo", 242, 186, 34, 18);
-    } else if (brandOpt === "iconlab") {
+    } else if (brandOpt === "iconlab" || brandOpt === "nike") {
       brand = `<text x="258" y="200" text-anchor="middle" font-size="15" font-weight="900" font-style="italic" fill="${logoColor}" font-family="Arial">IL</text>`;
     }
 
@@ -241,6 +241,10 @@ function jerseySVG(p, opt = {}) {
       sponsor = assetImage("emirates-logo", 145, 226, 110, 72);
     } else if (sponsorOpt === "spotify" && designAssetHref("spotify-logo")) {
       sponsor = assetImage("spotify-logo", 142, 236, 116, 34);
+    } else if (sponsorOpt === "fly_emirates") {
+      sponsor = `<text x="200" y="258" text-anchor="middle" font-size="16" font-weight="900" fill="${logoColor}" font-family="Arial">EMIRATES</text>`;
+    } else if (sponsorOpt === "spotify") {
+      sponsor = `<text x="200" y="260" text-anchor="middle" font-size="18" font-weight="900" fill="${logoColor}" font-family="Arial">Spotify</text>`;
     }
 
     front =
