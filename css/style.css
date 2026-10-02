@@ -4,6 +4,8 @@
   --dark: #121216;
   --card: #17171c;
   --card2: #1e1e24;
+  --dark-2: var(--card2);
+  --border: var(--line);
   --white: #f5f5f2;
   --grey: #9a9aa3;
   --line: #2a2a32;
@@ -24,6 +26,7 @@ html {
 }
 body {
   background: var(--black);
+  overflow-x: hidden;
   color: var(--white);
   font-family: var(--font-body);
   font-size: 15px;
@@ -1447,7 +1450,8 @@ footer {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 table {
   width: 100%;
@@ -1672,6 +1676,9 @@ tbody tr:hover {
   .nav-links {
     position: fixed;
     inset: 68px 0 auto 0;
+    z-index: 99;
+    max-height: calc(100vh - 68px);
+    overflow-y: auto;
     background: var(--dark);
     flex-direction: column;
     padding: 24px;
@@ -1688,6 +1695,43 @@ tbody tr:hover {
   }
   .f-grid2 {
     grid-template-columns: 1fr;
+  }
+  .wizard-wrapper {
+    padding-top: 20px;
+  }
+  .wizard-steps {
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scrollbar-width: thin;
+  }
+  .custom-preview {
+    padding: 18px;
+  }
+  .preview-stage {
+    min-height: 300px;
+  }
+  .custom-panel {
+    padding: 20px;
+  }
+  .qt-sidebar-layout {
+    grid-template-columns: 1fr;
+  }
+  .qt-tabs-v {
+    flex-direction: row;
+    overflow-x: auto;
+    border-left: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 10px;
+  }
+  .v-tab {
+    white-space: nowrap;
+  }
+  .step-actions {
+    flex-direction: column;
+  }
+  .step-actions .btn,
+  .p-actions .btn {
+    width: 100%;
   }
   .footer-grid {
     grid-template-columns: 1fr;
