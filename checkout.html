@@ -32,11 +32,38 @@
                     placeholder="05XXXXXXXX" pattern="0[0-9]{8,9}"></div>
         </div>
         <div class="f-grid2">
-            <div class="f-row"><label>الولاية *</label><select class="f-select" name="wilaya" id="wilaya"
-                    required></select></div>
-            <div class="f-row"><label>البلدية / العنوان *</label><input class="f-input" name="address" required
-                    placeholder="البلدية، الحي، الشارع..."></div>
+            <div class="f-row">
+                <label>الولاية *</label>
+                <input class="f-input" name="wilaya" id="wilaya" required
+                    placeholder="مثال: سطيف">
+            </div>
+            <div class="f-row">
+                <label>البلدية *</label>
+                <input class="f-input" name="commune" id="commune" required
+                    placeholder="مثال: سطيف">
+            </div>
         </div>
+        <div class="f-row">
+            <label>العنوان الكامل *</label>
+            <input class="f-input" name="address" required
+                placeholder="الحي، الشارع، رقم المنزل أو نقطة دالة...">
+        </div>
+
+        <div class="delivery-box">
+            <div class="delivery-box-head">
+                <div>
+                    <span class="section-sub">Delivery</span>
+                    <h4>اختر شركة التوصيل</h4>
+                </div>
+                <span class="delivery-price" id="deliveryPrice">—</span>
+            </div>
+            <div class="f-row" style="margin-bottom:0">
+                <label>شركة التوصيل *</label>
+                <select class="f-select" name="deliveryCompany" id="deliveryCompany" required></select>
+            </div>
+            <p class="delivery-note">سعر التوصيل ثابت ومحدد من المتجر، ويُضاف تلقائياً إلى إجمالي الطلب.</p>
+        </div>
+
         <div class="f-row"><label>ملاحظات</label><textarea class="f-textarea" name="notes" rows="3"
                 placeholder="أي تفاصيل إضافية..."></textarea></div>
         <button class="btn btn-red btn-block" style="padding:18px;font-size:14px">✓ تأكيد الطلب — الدفع عند
