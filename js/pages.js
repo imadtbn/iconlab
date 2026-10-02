@@ -155,35 +155,56 @@ function setWizardStep(step) {
 function initCustomizer() {
   const id = new URLSearchParams(location.search).get("id");
   const p = getProduct(id) || getProducts().find((x) => x.customizable);
-  const cs = {
-    size: null,
-    color: p.colors[0],
-    name: "",
-    number: "",
-    font: "bebas",
-    textColor: "#f2f2f0",
-    chestLogo: "default",
-    sponsor: "default",
-    logoColor: "#f2f2f0",
-    patch: "none",
-    view: "front",
-  };
-  window._csState = cs;
-  const price = () =>
-    p.price +
-    (cs.name ? 400 : 0) +
-    (cs.number ? 300 : 0) +
-    (cs.patch !== "none" ? 500 : 0);
-  const updateViewButtons = () => {
-    $$("#viewToggle button").forEach((b) => {
-      b.classList.toggle("active", b.dataset.v === cs.view);
-    });
+  const draftKey = "il_customizer_draft_" + p.id;
+  const baseTransforms = {
+    name: { x: 0, y: 0, scale: 1, rotation: 0 },
+    number: { x: 0, y: 0, scale: 1, rotation: 0 },
+    crest: { x: 0, y: 0, scale: 1, rotation: 0 },
+    sponsor: { x: 0, y: 0, scale: 1, rotation: 0 },
+    patch: { x: 0, y: 0, scale: 1, rotation: 0 },
   };
 
-  const draw = () => {
-    $("#stage").innerHTML = jerseySVG(p, {
-      view: cs.view,
-      color: cs.color.hex,
+  let savedDraft = null;
+  try {
+    savedDraft = JSON.parse(localStorage.getItem(draftKey) || "null");
+  } catch (_) {}
+
+  const cs = {
+    size: savedDraft?.size || null,
+    color: savedDraft?.color || p.colors[0],
+    name: savedDraft?.name || "",
+    number: savedDraft?.number || "",
+    font: savedDraft?.font || "bebas",
+    textColor: savedDraft?.textColor || "#f2f2f0",
+    chestLogo: savedDraft?.chestLogo || "default",
+    sponsor: savedDraft?.sponsor || "default",
+    logoColor: savedDraft?.logoColor || "#f2f2f0",
+    patch: savedDraft?.patch || "none",
+    view: savedDraft?.view || "front",
+    activeLayer: savedDraft?.activeLayer || "name",
+    transforms: {
+      ...structuredClone(baseTransforms),
+      ...(savedDraft?.transforms || {}),
+    },
+  };
+  window._csState = cs;
+
+  let history = [JSON.stringify(cs.transforms)];
+  let historyIndex = 0;
+  let isDraggingLayer = false;
+
+  const layerMeta = {
+    name: { label: "طبقة الاسم", view: "back" },
+    number: { label: "طبقة الرقم", view: "back" },
+    crest: { label: "شعار الصدر", view: "front" },
+    sponsor: { label: "الراعي", view: "front" },
+    patch: { label: "رقعة الكم", view: "front" },
+  };
+
+  const persistDraft = () => {
+    localStorage.setItem(draftKey, JSON.stringify({
+      size: cs.size,
+      color: cs.color,
       name: cs.name,
       number: cs.number,
       font: cs.font,
@@ -192,19 +213,108 @@ function initCustomizer() {
       sponsor: cs.sponsor,
       logoColor: cs.logoColor,
       patch: cs.patch,
-    });
-    updateReviewSpecs();
+      view: cs.view,
+      activeLayer: cs.activeLayer,
+      transforms: cs.transforms,
+    }));
   };
-  window._csDraw = draw;
 
-  const summary = () => {
-    $("#sumPrice").textContent = money(p.price);
-    $("#sumExtras").textContent = money(
-      (cs.name ? 400 : 0) +
-        (cs.number ? 300 : 0) +
-        (cs.patch !== "none" ? 500 : 0),
+  const commitHistory = () => {
+    const snapshot = JSON.stringify(cs.transforms);
+    if (history[historyIndex] === snapshot) {
+      persistDraft();
+      return;
+    }
+    history = history.slice(0, historyIndex + 1);
+    history.push(snapshot);
+    if (history.length > 40) history.shift();
+    historyIndex = history.length - 1;
+    persistDraft();
+    updateHistoryButtons();
+  };
+
+  const updateHistoryButtons = () => {
+    if ($("#undoDesign")) $("#undoDesign").disabled = historyIndex <= 0;
+    if ($("#redoDesign")) $("#redoDesign").disabled = historyIndex >= history.length - 1;
+  };
+
+  const price = () =>
+    p.price +
+    (cs.name ? 400 : 0) +
+    (cs.number ? 300 : 0) +
+    (cs.patch !== "none" ? 500 : 0);
+
+  const updateViewButtons = () => {
+    $$("#viewToggle button").forEach((b) => {
+      b.classList.toggle("active", b.dataset.v === cs.view);
+    });
+  };
+
+  const updateLayerUI = () => {
+    $$("#studioLayerTabs button").forEach((b) =>
+      b.classList.toggle("active", b.dataset.layer === cs.activeLayer),
     );
-    $("#sumTotal").textContent = money(price());
+    if ($("#activeLayerLabel")) {
+      $("#activeLayerLabel").textContent = layerMeta[cs.activeLayer]?.label || "طبقة";
+    }
+  };
+
+  const selectLayer = (layer) => {
+    if (!layerMeta[layer]) return;
+    cs.activeLayer = layer;
+    cs.view = layerMeta[layer].view;
+    updateViewButtons();
+    updateLayerUI();
+    persistDraft();
+    draw();
+  };
+
+  const bindLayerDrag = () => {
+    const svg = $("#stage svg");
+    if (!svg) return;
+
+    svg.querySelectorAll("[data-layer]").forEach((node) => {
+      const layer = node.dataset.layer;
+      node.classList.toggle("studio-selected", layer === cs.activeLayer);
+
+      node.onpointerdown = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        selectLayer(layer);
+
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const rect = svg.getBoundingClientRect();
+        const startTransform = { ...cs.transforms[layer] };
+        isDraggingLayer = true;
+        svg.setPointerCapture?.(event.pointerId);
+
+        const move = (ev) => {
+          if (!isDraggingLayer) return;
+          const dx = (ev.clientX - startX) * (400 / Math.max(rect.width, 1));
+          const dy = (ev.clientY - startY) * (500 / Math.max(rect.height, 1));
+          cs.transforms[layer] = {
+            ...startTransform,
+            x: Math.max(-110, Math.min(110, startTransform.x + dx)),
+            y: Math.max(-140, Math.min(140, startTransform.y + dy)),
+          };
+          draw(false);
+        };
+
+        const stop = () => {
+          if (!isDraggingLayer) return;
+          isDraggingLayer = false;
+          svg.onpointermove = null;
+          svg.onpointerup = null;
+          svg.onpointercancel = null;
+          commitHistory();
+        };
+
+        svg.onpointermove = move;
+        svg.onpointerup = stop;
+        svg.onpointercancel = stop;
+      };
+    });
   };
 
   const updateReviewSpecs = () => {
@@ -227,19 +337,59 @@ function initCustomizer() {
       <div class="spec-item"><span>رقعة الكم:</span><b>${esc(patchObj.name)}</b></div>
     `;
   };
-  // Wizard steps click events
+
+  const draw = (bindDrag = true) => {
+    $("#stage").innerHTML = jerseySVG(p, {
+      view: cs.view,
+      color: cs.color.hex,
+      name: cs.name,
+      number: cs.number,
+      font: cs.font,
+      textColor: cs.textColor,
+      chestLogo: cs.chestLogo,
+      sponsor: cs.sponsor,
+      logoColor: cs.logoColor,
+      patch: cs.patch,
+      transforms: cs.transforms,
+    });
+    updateViewButtons();
+    updateLayerUI();
+    updateReviewSpecs();
+    if (bindDrag) requestAnimationFrame(bindLayerDrag);
+  };
+  window._csDraw = draw;
+
+  const summary = () => {
+    $("#sumPrice").textContent = money(p.price);
+    $("#sumExtras").textContent = money(
+      (cs.name ? 400 : 0) +
+      (cs.number ? 300 : 0) +
+      (cs.patch !== "none" ? 500 : 0),
+    );
+    $("#sumTotal").textContent = money(price());
+  };
+
+  const mutateActiveLayer = (mutator) => {
+    const layer = cs.activeLayer;
+    if (!cs.transforms[layer]) return;
+    mutator(cs.transforms[layer]);
+    cs.transforms[layer].scale = Math.max(0.45, Math.min(2.2, cs.transforms[layer].scale));
+    cs.transforms[layer].rotation = Math.max(-180, Math.min(180, cs.transforms[layer].rotation));
+    commitHistory();
+    draw();
+  };
+
   $$(".step-btn").forEach((b) => {
     b.onclick = () => setWizardStep(b.dataset.step);
   });
 
-  // Vertical tabs (QT style)
   $$("#qtCategoryTabs .v-tab").forEach((tb) => {
     tb.onclick = () => {
       $$("#qtCategoryTabs .v-tab").forEach((x) => x.classList.remove("active"));
       tb.classList.add("active");
       const cat = tb.dataset.cat;
-      $$(".qt-panel-v .cat-content").forEach((c) =>
-        c.classList.toggle("active", c.dataset.catContent === cat),
+      $$(".qt-panel-v .cat-content").forEach((panel) =>
+        panel.classList.toggle("active", panel.dataset.catContent === cat),
       );
     };
   });
@@ -247,154 +397,267 @@ function initCustomizer() {
   $("#csProduct").innerHTML = `<div class="f-row"><label>القميص — Jersey</label>
     <select class="f-select" id="selProduct">${getProducts()
       .filter((x) => x.customizable)
-      .map(
-        (x) =>
-          `<option value="${x.id}" ${x.id === p.id ? "selected" : ""}>${esc(x.name)} — ${money(x.price)}</option>`,
-      )
-      .join("")}</select></div>`;
+      .map((x) =>
+        `<option value="${x.id}" ${x.id === p.id ? "selected" : ""}>${esc(x.name)} — ${money(x.price)}</option>`
+      ).join("")}</select></div>`;
   $("#selProduct").onchange = (e) =>
     (location.href = "customizer.html?id=" + e.target.value);
 
   $("#csColors").innerHTML = p.colors
-    .map(
-      (c, i) =>
-        `<div class="swatch ${i === 0 ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex}"></div>`,
-    )
-    .join("");
-  $$("#csColors .swatch").forEach(
-    (s) =>
-      (s.onclick = () => {
-        $$("#csColors .swatch").forEach((x) => x.classList.remove("active"));
-        s.classList.add("active");
-        cs.color = { hex: s.dataset.hex, name: s.dataset.name };
-        draw();
-      }),
-  );
+    .map((c, i) =>
+      `<div class="swatch ${i === 0 ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex}"></div>`
+    ).join("");
+  $$("#csColors .swatch").forEach((s) => {
+    if (s.dataset.hex === cs.color.hex) {
+      $$("#csColors .swatch").forEach((x) => x.classList.remove("active"));
+      s.classList.add("active");
+    }
+    s.onclick = () => {
+      $$("#csColors .swatch").forEach((x) => x.classList.remove("active"));
+      s.classList.add("active");
+      cs.color = { hex: s.dataset.hex, name: s.dataset.name };
+      persistDraft();
+      draw();
+    };
+  });
 
   $("#csSizes").innerHTML = p.sizes
-    .map((s) => `<button class="size" data-s="${s}">${s}</button>`)
+    .map((s) => `<button class="size ${s === cs.size ? "active" : ""}" data-s="${s}">${s}</button>`)
     .join("");
-  $$("#csSizes .size").forEach(
-    (b) =>
-      (b.onclick = () => {
-        $$("#csSizes .size").forEach((x) => x.classList.remove("active"));
-        b.classList.add("active");
-        cs.size = b.dataset.s;
-        draw();
-      }),
-  );
+  $$("#csSizes .size").forEach((b) => {
+    b.onclick = () => {
+      $$("#csSizes .size").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      cs.size = b.dataset.s;
+      persistDraft();
+      draw();
+    };
+  });
 
-  $("#csFonts").innerHTML = FONTS.map(
-    (f) =>
-      `<button class="chip ${f.id === cs.font ? "active" : ""}" data-f="${f.id}">${f.name}</button>`,
+  $("#csFonts").innerHTML = FONTS.map((f) =>
+    `<button class="chip ${f.id === cs.font ? "active" : ""}" data-f="${f.id}">${f.name}</button>`
   ).join("");
-  $$("#csFonts .chip").forEach(
-    (b) =>
-      (b.onclick = () => {
-        $$("#csFonts .chip").forEach((x) => x.classList.remove("active"));
-        b.classList.add("active");
-        cs.font = b.dataset.f;
-        draw();
-      }),
-  );
+  $$("#csFonts .chip").forEach((b) => {
+    b.onclick = () => {
+      $$("#csFonts .chip").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      cs.font = b.dataset.f;
+      persistDraft();
+      draw();
+    };
+  });
 
-  $("#csTextColors").innerHTML = TEXT_COLORS.map(
-    (c) =>
-      `<div class="swatch ${c.hex === cs.textColor ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex};${c.hex === "#15151a" ? "outline-color:#555" : ""}"></div>`,
+  $("#csTextColors").innerHTML = TEXT_COLORS.map((c) =>
+    `<div class="swatch ${c.hex === cs.textColor ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex};${c.hex === "#15151a" ? "outline-color:#555" : ""}"></div>`
   ).join("");
-  $$("#csTextColors .swatch").forEach(
-    (s) =>
-      (s.onclick = () => {
-        $$("#csTextColors .swatch").forEach((x) =>
-          x.classList.remove("active"),
-        );
-        s.classList.add("active");
-        cs.textColor = s.dataset.hex;
-        draw();
-      }),
-  );
+  $$("#csTextColors .swatch").forEach((s) => {
+    s.onclick = () => {
+      $$("#csTextColors .swatch").forEach((x) => x.classList.remove("active"));
+      s.classList.add("active");
+      cs.textColor = s.dataset.hex;
+      persistDraft();
+      draw();
+    };
+  });
 
-  // Logo Chest Select
-  $("#selChestLogo").innerHTML = CHEST_LOGOS.map(
-    (x) => `<option value="${x.id}">${x.name}</option>`,
+  $("#selChestLogo").innerHTML = CHEST_LOGOS.map((x) =>
+    `<option value="${x.id}" ${x.id === cs.chestLogo ? "selected" : ""}>${x.name}</option>`
   ).join("");
   $("#selChestLogo").onchange = (e) => {
     cs.chestLogo = e.target.value;
-    draw();
+    persistDraft();
+    selectLayer("crest");
   };
 
-  // Sponsor Select
-  $("#selSponsor").innerHTML = SPONSORS.map(
-    (x) => `<option value="${x.id}">${x.name}</option>`,
+  $("#selSponsor").innerHTML = SPONSORS.map((x) =>
+    `<option value="${x.id}" ${x.id === cs.sponsor ? "selected" : ""}>${x.name}</option>`
   ).join("");
   $("#selSponsor").onchange = (e) => {
     cs.sponsor = e.target.value;
-    draw();
+    persistDraft();
+    selectLayer("sponsor");
   };
 
-  // Logo Colors Swatches
-  $("#csLogoColors").innerHTML = TEXT_COLORS.map(
-    (c, i) =>
-      `<div class="swatch ${i === 0 ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex}"></div>`,
+  $("#csLogoColors").innerHTML = TEXT_COLORS.map((c) =>
+    `<div class="swatch ${c.hex === cs.logoColor ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex}"></div>`
   ).join("");
-  $$("#csLogoColors .swatch").forEach(
-    (s) =>
-      (s.onclick = () => {
-        $$("#csLogoColors .swatch").forEach((x) => x.classList.remove("active"));
-        s.classList.add("active");
-        cs.logoColor = s.dataset.hex;
-        draw();
-      }),
-  );
+  $$("#csLogoColors .swatch").forEach((s) => {
+    s.onclick = () => {
+      $$("#csLogoColors .swatch").forEach((x) => x.classList.remove("active"));
+      s.classList.add("active");
+      cs.logoColor = s.dataset.hex;
+      persistDraft();
+      draw();
+    };
+  });
 
-  $("#csPatches").innerHTML = PATCHES.map(
-    (pt) => `<button class="chip" data-p="${pt.id}">${pt.name}</button>`,
+  $("#csPatches").innerHTML = PATCHES.map((pt) =>
+    `<button class="chip ${pt.id === cs.patch ? "active" : ""}" data-p="${pt.id}">${pt.name}</button>`
   ).join("");
-  $$("#csPatches .chip").forEach((b, i) => {
-    if (i === 0) b.classList.add("active");
+  $$("#csPatches .chip").forEach((b) => {
     b.onclick = () => {
       $$("#csPatches .chip").forEach((x) => x.classList.remove("active"));
       b.classList.add("active");
       cs.patch = b.dataset.p;
-      draw();
+      persistDraft();
+      selectLayer("patch");
       summary();
     };
   });
+
+  $("#inName").value = cs.name;
   $("#inName").oninput = (e) => {
     cs.name = e.target.value.slice(0, 14);
-    if (cs.view !== "back") {
-      cs.view = "back";
-      updateViewButtons();
-    }
+    cs.view = "back";
+    cs.activeLayer = "name";
+    persistDraft();
     draw();
     summary();
   };
+
+  $("#inNumber").value = cs.number;
   $("#inNumber").oninput = (e) => {
     cs.number = e.target.value.replace(/\D/g, "").slice(0, 2);
     e.target.value = cs.number;
-    if (cs.view !== "back") {
-      cs.view = "back";
-      updateViewButtons();
-    }
+    cs.view = "back";
+    cs.activeLayer = "number";
+    persistDraft();
     draw();
     summary();
   };
-  $$("#viewToggle button").forEach(
-    (b) =>
-      (b.onclick = () => {
-        cs.view = b.dataset.v;
-        $$("#viewToggle button").forEach((x) => x.classList.remove("active"));
-        b.classList.add("active");
-        draw();
-      }),
-  );
+
+  $$("#viewToggle button").forEach((b) => {
+    b.onclick = () => {
+      cs.view = b.dataset.v;
+      persistDraft();
+      draw();
+    };
+  });
+
+  $$("#studioLayerTabs button").forEach((b) => {
+    b.onclick = () => selectLayer(b.dataset.layer);
+  });
+
+  $$("#studioToolbar [data-move]").forEach((b) => {
+    b.onclick = () => {
+      const [dx, dy] = b.dataset.move.split(",").map(Number);
+      mutateActiveLayer((t) => {
+        t.x = Math.max(-110, Math.min(110, t.x + dx));
+        t.y = Math.max(-140, Math.min(140, t.y + dy));
+      });
+    };
+  });
+
+  $$("#studioToolbar [data-scale]").forEach((b) => {
+    b.onclick = () => mutateActiveLayer((t) => {
+      t.scale = Number((t.scale + Number(b.dataset.scale)).toFixed(2));
+    });
+  });
+
+  $$("#studioToolbar [data-rotate]").forEach((b) => {
+    b.onclick = () => mutateActiveLayer((t) => {
+      t.rotation += Number(b.dataset.rotate);
+    });
+  });
+
+  $("#undoDesign").onclick = () => {
+    if (historyIndex <= 0) return;
+    historyIndex -= 1;
+    cs.transforms = JSON.parse(history[historyIndex]);
+    persistDraft();
+    updateHistoryButtons();
+    draw();
+  };
+
+  $("#redoDesign").onclick = () => {
+    if (historyIndex >= history.length - 1) return;
+    historyIndex += 1;
+    cs.transforms = JSON.parse(history[historyIndex]);
+    persistDraft();
+    updateHistoryButtons();
+    draw();
+  };
+
+  $("#resetDesign").onclick = () => {
+    cs.transforms = structuredClone(baseTransforms);
+    commitHistory();
+    draw();
+    toast("تمت إعادة ضبط مواضع التصميم");
+  };
+
+  $("#saveDesignDraft").onclick = async () => {
+    const btn = $("#saveDesignDraft");
+    btn.disabled = true;
+    btn.textContent = "جاري الحفظ...";
+    try {
+      const front = await svgToPNG(jerseySVG(p, {
+        view: "front",
+        color: cs.color.hex,
+        chestLogo: cs.chestLogo,
+        sponsor: cs.sponsor,
+        logoColor: cs.logoColor,
+        patch: cs.patch,
+        transforms: cs.transforms,
+      }));
+      const back = await svgToPNG(jerseySVG(p, {
+        view: "back",
+        color: cs.color.hex,
+        name: cs.name,
+        number: cs.number,
+        font: cs.font,
+        textColor: cs.textColor,
+        patch: cs.patch,
+        transforms: cs.transforms,
+      }));
+      const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
+      const design = {
+        id: designId,
+        productId: p.id,
+        createdAt: new Date().toISOString(),
+        size: cs.size,
+        color: cs.color,
+        name: cs.name,
+        number: cs.number,
+        font: cs.font,
+        textColor: cs.textColor,
+        chestLogo: cs.chestLogo,
+        sponsor: cs.sponsor,
+        logoColor: cs.logoColor,
+        patch: cs.patch,
+        transforms: cs.transforms,
+        previewFront: front,
+        previewBack: back,
+      };
+      if (window.IconLabDB) await window.IconLabDB.createDesign(design);
+      localStorage.setItem("il_last_design_id", designId);
+      toast("✓ تم حفظ التصميم " + designId);
+    } catch (error) {
+      console.error(error);
+      toast("تعذر حفظ التصميم");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "حفظ التصميم";
+    }
+  };
+
   draw();
   summary();
+  updateHistoryButtons();
+
   $("#addCustom").onclick = async () => {
     if (!cs.size) return toast("⚠ اختر المقاس");
     if (p.stock === 0) return toast("✕ نفدت الكمية");
+
     const front = await svgToPNG(
-      jerseySVG(p, { view: "front", color: cs.color.hex }),
+      jerseySVG(p, {
+        view: "front",
+        color: cs.color.hex,
+        chestLogo: cs.chestLogo,
+        sponsor: cs.sponsor,
+        logoColor: cs.logoColor,
+        patch: cs.patch,
+        transforms: cs.transforms,
+      }),
     );
     const back = await svgToPNG(
       jerseySVG(p, {
@@ -405,8 +668,10 @@ function initCustomizer() {
         font: cs.font,
         textColor: cs.textColor,
         patch: cs.patch,
+        transforms: cs.transforms,
       }),
     );
+
     const fontObj = FONTS.find((f) => f.id === cs.font) || FONTS[0];
     const patchObj = PATCHES.find((x) => x.id === cs.patch) || PATCHES[0];
     const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
@@ -427,9 +692,11 @@ function initCustomizer() {
       sponsor: cs.sponsor,
       logoColor: cs.logoColor,
       patch: cs.patch,
+      transforms: cs.transforms,
       previewFront: front,
-      previewBack: back
+      previewBack: back,
     };
+
     try {
       if (window.IconLabDB) await window.IconLabDB.createDesign(design);
     } catch (error) {
@@ -457,6 +724,7 @@ function initCustomizer() {
     });
   };
 }
+
 function addToCart(item) {
   const c = store.cart;
   c.push({ ...item, uid: Date.now() + Math.random() });
