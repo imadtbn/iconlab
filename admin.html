@@ -20,10 +20,20 @@
         <div class="logo" style="justify-content:center;margin-bottom:18px"><span
                 class="ball"></span>ICON<span>LAB</span></div>
         <h2 style="font-size:30px;margin-bottom:6px">ADMIN ACCESS</h2>
-        <p style="color:var(--grey);font-size:12px;margin-bottom:22px">لوحة التحكم — أدخل كلمة المرور</p>
-        <form id="loginForm"><input class="f-input" type="password" id="pass" placeholder="Password"
-                style="text-align:center;margin-bottom:14px">
-            <button class="btn btn-red btn-block">دخول ←</button>
+        <p style="color:var(--grey);font-size:12px;margin-bottom:22px">دخول المشرفين عبر الحساب الآمن</p>
+        <form id="loginForm">
+            <div class="f-row">
+                <label>البريد الإلكتروني</label>
+                <input class="f-input" type="email" id="adminEmail" autocomplete="username"
+                    placeholder="admin@example.com" required>
+            </div>
+            <div class="f-row">
+                <label>كلمة المرور</label>
+                <input class="f-input" type="password" id="adminPassword" autocomplete="current-password"
+                    placeholder="••••••••" required>
+            </div>
+            <button class="btn btn-red btn-block" id="adminLoginBtn">دخول آمن ←</button>
+            <p id="adminLoginHint" style="color:var(--grey);font-size:11px;margin-top:12px"></p>
         </form>
     </div>
     <div id="dash" style="display:none">
@@ -32,7 +42,10 @@
                 <div class="crumb">IconLab / Dashboard</div>
                 <h1 style="font-size:44px">لوحة <span style="color:var(--red)">التحكم</span></h1>
             </div>
-            <button class="btn btn-outline btn-sm" id="logout">تسجيل الخروج ✕</button>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <span id="adminIdentity" style="font-size:12px;color:var(--grey)"></span>
+                <button class="btn btn-outline btn-sm" id="logout">تسجيل الخروج ✕</button>
+            </div>
         </div>
         <div class="stat-cards" id="stats"></div>
         <div class="tabs"><button class="tab active" data-t="orders">📦 Orders</button><button class="tab"
