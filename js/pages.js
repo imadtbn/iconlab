@@ -197,6 +197,7 @@ async function initCustomizer() {
   };
   window._csState = cs;
 
+  let currentDesignId = savedDraft?.designId || null;
   let history = [JSON.stringify(cs.transforms)];
   let historyIndex = 0;
   let isDraggingLayer = false;
@@ -212,6 +213,7 @@ async function initCustomizer() {
 
   const persistDraft = () => {
     localStorage.setItem(draftKey, JSON.stringify({
+      designId: currentDesignId,
       size: cs.size,
       color: cs.color,
       name: cs.name,
@@ -634,8 +636,12 @@ async function initCustomizer() {
   const buildDesignPdfBlob = async () => {
     if (!window.jspdf?.jsPDF) throw new Error("JSPDF_NOT_READY");
     const { front, back } = await generateDesignRenders();
-    const designId = localStorage.getItem("il_last_design_id") ||
+    const designId = currentDesignId ||
       ("IL-DGN-" + Date.now().toString(36).toUpperCase());
+    if (!currentDesignId) {
+      currentDesignId = designId;
+      persistDraft();
+    }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -728,7 +734,9 @@ async function initCustomizer() {
     btn.textContent = "جاري الحفظ...";
     try {
       const { front, back } = await generateDesignRenders();
-      const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
+      const designId = currentDesignId || ("IL-DGN-" + Date.now().toString(36).toUpperCase());
+      currentDesignId = designId;
+      persistDraft();
       const design = {
         id: designId,
         productId: p.id,
@@ -776,7 +784,9 @@ async function initCustomizer() {
     const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
     const brandObj = BRANDS.find((x) => x.id === cs.brand) || BRANDS[0];
 
-    const designId = "IL-DGN-" + Date.now().toString(36).toUpperCase();
+    const designId = currentDesignId || ("IL-DGN-" + Date.now().toString(36).toUpperCase());
+    currentDesignId = designId;
+    persistDraft();
     const design = {
       id: designId,
       productId: p.id,
@@ -788,6 +798,7 @@ async function initCustomizer() {
       font: cs.font,
       textColor: cs.textColor,
       chestLogo: cs.chestLogo,
+      brand: cs.brand,
       sponsor: cs.sponsor,
       logoColor: cs.logoColor,
       patch: cs.patch,
