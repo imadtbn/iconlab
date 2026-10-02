@@ -1787,3 +1787,46 @@ tbody tr:hover {
     padding: 26px 20px;
   }
 }
+
+/* ---------- DELIVERY SELECTOR ---------- */
+.delivery-box {
+  margin: 6px 0 20px;
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(227, 34, 42, 0.05));
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: var(--radius);
+}
+.delivery-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.delivery-box-head h4 {
+  font-size: 20px;
+}
+.delivery-price {
+  color: var(--gold);
+  font-family: var(--font-head);
+  font-size: 26px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.delivery-note {
+  color: var(--grey);
+  font-size: 11px;
+  margin-top: 10px;
+  line-height: 1.7;
+}
+@media (max-width: 640px) {
+  .delivery-box {
+    padding: 14px;
+  }
+  .delivery-box-head {
+    align-items: flex-start;
+  }
+  .delivery-price {
+    font-size: 22px;
+  }
+}
