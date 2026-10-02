@@ -86,13 +86,18 @@ function renderHeader(active) {
   const el = document.createElement("header");
   el.innerHTML = `<div class="container nav">
     <a href="index.html" class="logo"><img src="assets/images/IMG-20261001-WA0000.jpg" alt="IconLab Logo" style="height:36px;width:36px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold)">ICON<span>LAB</span></a>
-    <nav class="nav-links" id="navLinks">${links}<a href="admin.html" style="color:var(--gold)">Admin</a></nav>
+    <nav class="nav-links" id="navLinks">${links}</nav>
     <div class="nav-icons">
       <a href="cart.html" class="icon-btn" title="Cart">🛒<span class="cart-count" id="cartCount" style="display:none">0</span></a>
-      <button class="burger" id="burger">☰</button>
+      <button class="burger" id="burger" type="button" aria-label="فتح القائمة" aria-controls="navLinks" aria-expanded="false">☰</button>
     </div></div>`;
   document.body.prepend(el);
-  $("#burger").onclick = () => $("#navLinks").classList.toggle("open");
+  $("#burger").onclick = () => {
+    const nav = $("#navLinks");
+    const isOpen = nav.classList.toggle("open");
+    $("#burger").setAttribute("aria-expanded", String(isOpen));
+    $("#burger").setAttribute("aria-label", isOpen ? "إغلاق القائمة" : "فتح القائمة");
+  };
   updateCartCount();
 }
 function updateCartCount() {
@@ -111,8 +116,8 @@ function renderFooter() {
       <div class="socials"><a href="#" title="Instagram">📷</a><a href="#" title="TikTok">🎵</a><a href="#" title="Facebook">📘</a></div></div>
     <div><h4>Shop</h4><a href="shop.html">All Jerseys</a><a href="customizer.html">Customize Yours</a><a href="cart.html">Cart</a><a href="checkout.html">Checkout</a></div>
     <div><h4>Company</h4><a href="about.html">About Us</a><a href="contact.html">Contact</a><a href="faq.html">FAQ</a></div>
-    <div><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a><a href="admin.html">Admin Dashboard</a></div>
-  </div><div class="footer-bottom"><span>© 2026 IconLab — All rights reserved.</span><span>Cash on Delivery 🇩🇿</span></div></div>`;
+    <div><h4>Legal</h4><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms &amp; Conditions</a></div>
+  </div><div class="footer-bottom"><span>© ${new Date().getFullYear()} IconLab — All rights reserved.</span><span>Cash on Delivery 🇩🇿</span></div></div>`;
   document.body.appendChild(el);
 }
 
