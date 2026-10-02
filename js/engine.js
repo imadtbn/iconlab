@@ -216,10 +216,10 @@ function jerseySVG(p, opt = {}) {
       `<g data-layer="sponsor" class="studio-layer" transform="${studioTransform(transforms, "sponsor", 200, 260)}">${sponsor}</g>`;
   } else {
     const nm = name
-      ? `<text x="200" y="168" text-anchor="middle" font-size="34" font-weight="700" letter-spacing="3" fill="${tc}" style="font-family:${fontCss}">${esc(name)}</text>`
+      ? `<g data-layer="name" class="studio-layer" transform="${studioTransform(transforms, "name", 200, 168)}"><text x="200" y="168" text-anchor="middle" font-size="34" font-weight="700" letter-spacing="3" fill="${tc}" style="font-family:${fontCss}">${esc(name)}</text></g>`
       : "";
     const num = number
-      ? `<text x="200" y="310" text-anchor="middle" font-size="120" font-weight="800" fill="${tc}" style="font-family:${fontCss}">${esc(number)}</text>`
+      ? `<g data-layer="number" class="studio-layer" transform="${studioTransform(transforms, "number", 200, 270)}"><text x="200" y="310" text-anchor="middle" font-size="120" font-weight="800" fill="${tc}" style="font-family:${fontCss}">${esc(number)}</text></g>`
       : "";
     const tag =
       !name && !number
