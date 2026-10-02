@@ -144,27 +144,19 @@ const SPONSORS = [
   { id: "spotify", name: "Spotify" },
   { id: "none", name: "Empty (No Sponsor)" },
 ];
-const WILAYAS = [
-  "الجزائر",
-  "وهران",
-  "قسنطينة",
-  "عنابة",
-  "سطيف",
-  "البليدة",
-  "باتنة",
-  "تلمسان",
-  "بجاية",
-  "تيزي وزو",
-  "ورقلة",
-  "الشلف",
-  "سيدي بلعباس",
-  "بسكرة",
-  "تبسة",
-  "جيجل",
-  "أدرار",
-  "البيض",
-  "بشار",
-  "البويرة",
+/* ---------- DELIVERY SETTINGS ----------
+   Developer-controlled fixed prices.
+   Edit only this array to change companies or shipping fees. */
+const DELIVERY_COMPANIES = [
+  { id: "yalidine", name: "Yalidine", price: 600, active: true },
+  { id: "zr-express", name: "ZR Express", price: 650, active: true },
+  { id: "maystro", name: "Maystro Delivery", price: 600, active: true },
 ];
-const DELIVERY_FEE = 500,
-  FREE_OVER = 12000;
+
+function getDeliveryCompanies() {
+  return DELIVERY_COMPANIES.filter((company) => company.active);
+}
+
+function getDeliveryCompany(id) {
+  return getDeliveryCompanies().find((company) => company.id === id) || null;
+}
