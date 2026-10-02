@@ -492,10 +492,9 @@ function renderCart() {
     )
     .join("");
   const sub = c.reduce((a, i) => a + i.price * i.qty, 0);
-  const del = sub >= FREE_OVER ? 0 : DELIVERY_FEE;
   $("#cSub").textContent = money(sub);
-  $("#cDel").textContent = del ? money(del) : "مجاني 🎉";
-  $("#cTotal").textContent = money(sub + del);
+  $("#cDel").textContent = "يُحدد عند الإتمام";
+  $("#cTotal").textContent = money(sub);
 }
 function chQty(i, d) {
   const c = store.cart;
