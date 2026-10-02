@@ -124,26 +124,84 @@ const TEXT_COLORS = [
   { name: "Red", hex: "#e3222a" },
   { name: "Navy", hex: "#1b2a4a" },
 ];
+const DESIGN_ASSETS = [
+  {
+    id: "real-madrid-crest",
+    name: "Real Madrid Crest",
+    type: "club",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Real_Madrid_CF_(ancien_logo).svg"
+  },
+  {
+    id: "psg-crest",
+    name: "Paris Saint-Germain Crest",
+    type: "club",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Paris_Saint-Germain_F.C._logo_(free_version).svg"
+  },
+  {
+    id: "nike-logo",
+    name: "Nike",
+    type: "brand",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Logo_NIKE.svg"
+  },
+  {
+    id: "emirates-logo",
+    name: "Emirates",
+    type: "sponsor",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Emirates_Logo.svg"
+  },
+  {
+    id: "spotify-logo",
+    name: "Spotify",
+    type: "sponsor",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Spotify_2024_logo.svg"
+  },
+  {
+    id: "ucl-logo",
+    name: "UEFA Champions League",
+    type: "patch",
+    url: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Champions_League_logo_no_text.svg"
+  }
+];
+
 const PATCHES = [
   { id: "none", name: "No Patch" },
-  { id: "ucl", name: "Champions League" },
+  { id: "ucl", name: "UEFA Champions League", assetId: "ucl-logo" },
   { id: "league", name: "League Badge" },
   { id: "star", name: "Star Ball" },
   { id: "wc", name: "World Cup Badge" },
 ];
+
 const CHEST_LOGOS = [
   { id: "default", name: "Default Team Crest" },
-  { id: "qt_dragon", name: "QT Dragon Emblem" },
+  { id: "real_madrid", name: "Real Madrid Crest", assetId: "real-madrid-crest" },
+  { id: "psg", name: "Paris Saint-Germain Crest", assetId: "psg-crest" },
   { id: "iconlab_star", name: "IconLab Star Crest" },
   { id: "none", name: "Empty (No Logo)" },
 ];
+
+const BRANDS = [
+  { id: "iconlab", name: "IconLab" },
+  { id: "nike", name: "Nike", assetId: "nike-logo" },
+  { id: "none", name: "No Brand" },
+];
+
 const SPONSORS = [
   { id: "default", name: "Default Team Sponsor" },
   { id: "iconlab", name: "ICONLAB Streetwear" },
-  { id: "fly_emirates", name: "Emirates / Fly Better" },
-  { id: "spotify", name: "Spotify" },
+  { id: "fly_emirates", name: "Emirates", assetId: "emirates-logo" },
+  { id: "spotify", name: "Spotify", assetId: "spotify-logo" },
   { id: "none", name: "Empty (No Sponsor)" },
 ];
+
+function getDesignAsset(id) {
+  return DESIGN_ASSETS.find((asset) => asset.id === id) || null;
+}
+
+function getDefaultCrestForProduct(product) {
+  if (product?.team === "Real Madrid") return "real_madrid";
+  if (product?.team === "Paris Saint-Germain") return "psg";
+  return "default";
+}
 /* ---------- DELIVERY SETTINGS ----------
    Developer-controlled fixed prices.
    Edit only this array to change companies or shipping fees. */
