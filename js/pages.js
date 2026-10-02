@@ -1,6 +1,7 @@
 /* ============ PAGE CONTROLLERS ============ */
 document.addEventListener("DOMContentLoaded", async () => {
   const page = document.body.dataset.page;
+  if (window.IconLabDB) await window.IconLabDB.init();
   renderHeader(document.body.dataset.nav || "");
   renderFooter();
   (
@@ -559,11 +560,28 @@ function initCheckout() {
       total,
       status: "New",
     };
-    const o = store.orders;
-    o.unshift(order);
-    store.orders = o;
-    store.cart = [];
-    location.href = "confirmation.html?id=" + order.id;
+    const submitBtn = e.target.querySelector('button[type="submit"], button:not([type])');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "جاري تسجيل الطلب...";
+    }
+    try {
+      if (window.IconLabDB) await window.IconLabDB.createOrder(order);
+      else {
+        const o = store.orders;
+        o.unshift(order);
+        store.orders = o;
+      }
+      store.cart = [];
+      location.href = "confirmation.html?id=" + encodeURIComponent(order.id);
+    } catch (error) {
+      console.error(error);
+      toast("تعذر إرسال الطلب. تحقق من الاتصال وحاول مجدداً.");
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "✓ تأكيد الطلب — الدفع عند الاستلام";
+      }
+    }
   };
 }
 function initConfirmation() {
