@@ -135,6 +135,31 @@ function isLight(hex) {
     ((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11 > 150
   );
 }
+window.ICONLAB_ASSET_CACHE = window.ICONLAB_ASSET_CACHE || {};
+
+async function loadDesignAssets() {
+  const assets = Array.isArray(window.DESIGN_ASSETS) ? window.DESIGN_ASSETS : DESIGN_ASSETS;
+  await Promise.allSettled(assets.map(async (asset) => {
+    if (window.ICONLAB_ASSET_CACHE[asset.id]) return;
+    const response = await fetch(asset.url, { mode: "cors" });
+    if (!response.ok) throw new Error("Asset " + asset.id + " failed");
+    const svg = await response.text();
+    if (!svg.includes("<svg")) throw new Error("Asset " + asset.id + " is not SVG");
+    window.ICONLAB_ASSET_CACHE[asset.id] =
+      "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }));
+}
+
+function designAssetHref(assetId) {
+  return window.ICONLAB_ASSET_CACHE?.[assetId] || "";
+}
+
+function assetImage(assetId, x, y, width, height, extra = "") {
+  const href = designAssetHref(assetId);
+  if (!href) return "";
+  return `<image href="${href}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" ${extra}/>`;
+}
+
 function studioTransform(transforms, key, cx, cy) {
   const t = transforms?.[key] || {};
   const x = Number(t.x || 0);
@@ -165,6 +190,7 @@ function jerseySVG(p, opt = {}) {
     number = opt.number || "";
   const chestLogo = opt.chestLogo || "default";
   const sponsorOpt = opt.sponsor || "default";
+  const brandOpt = opt.brand || "iconlab";
   const transforms = opt.transforms || {};
 
   // ---- body path ----
@@ -188,15 +214,22 @@ function jerseySVG(p, opt = {}) {
   if (view === "front") {
     // Chest Logo rendering
     let crest = "";
-    if (chestLogo === "default") {
+    if (chestLogo === "real_madrid" && designAssetHref("real-madrid-crest")) {
+      crest = assetImage("real-madrid-crest", 136, 176, 34, 42);
+    } else if (chestLogo === "psg" && designAssetHref("psg-crest")) {
+      crest = assetImage("psg-crest", 136, 178, 36, 36);
+    } else if (chestLogo === "default") {
       crest = `<g transform="translate(140,180)"><path d="M0,0 L24,0 L24,16 Q24,30 12,36 Q0,30 0,16 Z" fill="${dark}"/><path d="M4,5 L20,5 L20,15 Q20,25 12,30 Q4,25 4,15 Z" fill="${accent}"/><text x="12" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="${isLight(hex) ? "#fff" : "#f2f2f0"}" font-family="Arial">${esc((p.team || "IL")[0])}</text></g>`;
-    } else if (chestLogo === "qt_dragon") {
-      crest = `<g transform="translate(140,180)"><path d="M12,0 L24,12 L18,32 L6,32 L0,12 Z" fill="${logoColor}"/><text x="12" y="22" text-anchor="middle" font-size="12" font-weight="900" fill="${hex}">QT</text></g>`;
     } else if (chestLogo === "iconlab_star") {
       crest = `<g transform="translate(140,180)"><circle r="16" cx="12" cy="16" fill="${logoColor}"/><text x="12" y="21" text-anchor="middle" font-size="14" fill="${hex}">✦</text></g>`;
     }
 
-    const brand = `<text x="258" y="200" text-anchor="middle" font-size="15" font-weight="900" font-style="italic" fill="${logoColor}" font-family="Arial">IL</text>`;
+    let brand = "";
+    if (brandOpt === "nike" && designAssetHref("nike-logo")) {
+      brand = assetImage("nike-logo", 242, 186, 34, 18);
+    } else if (brandOpt === "iconlab") {
+      brand = `<text x="258" y="200" text-anchor="middle" font-size="15" font-weight="900" font-style="italic" fill="${logoColor}" font-family="Arial">IL</text>`;
+    }
 
     // Sponsor rendering
     let sponsor = "";
@@ -204,15 +237,15 @@ function jerseySVG(p, opt = {}) {
       sponsor = `<text x="200" y="262" text-anchor="middle" font-size="22" font-weight="900" letter-spacing="4" fill="${logoColor}" font-family="Arial" opacity=".9">${esc((p.team || "").split(" ")[0].toUpperCase().slice(0, 10))}</text>`;
     } else if (sponsorOpt === "iconlab") {
       sponsor = `<text x="200" y="262" text-anchor="middle" font-size="22" font-weight="900" letter-spacing="5" fill="${logoColor}" font-family="Arial">ICONLAB</text>`;
-    } else if (sponsorOpt === "fly_emirates") {
-      sponsor = `<text x="200" y="258" text-anchor="middle" font-size="16" font-weight="900" letter-spacing="2" fill="${logoColor}" font-family="Arial">FLY EMIRATES</text>`;
-    } else if (sponsorOpt === "spotify") {
-      sponsor = `<g transform="translate(200,260)"><circle cx="-40" cy="-6" r="10" fill="${logoColor}"/><text x="0" y="0" text-anchor="middle" font-size="18" font-weight="900" letter-spacing="2" fill="${logoColor}" font-family="Arial">Spotify</text></g>`;
+    } else if (sponsorOpt === "fly_emirates" && designAssetHref("emirates-logo")) {
+      sponsor = assetImage("emirates-logo", 145, 226, 110, 72);
+    } else if (sponsorOpt === "spotify" && designAssetHref("spotify-logo")) {
+      sponsor = assetImage("spotify-logo", 142, 236, 116, 34);
     }
 
     front =
       `<g data-layer="crest" class="studio-layer" transform="${studioTransform(transforms, "crest", 152, 198)}">${crest}</g>` +
-      brand +
+      `<g data-layer="brand" class="studio-layer" transform="${studioTransform(transforms, "brand", 258, 198)}">${brand}</g>` +
       `<g data-layer="sponsor" class="studio-layer" transform="${studioTransform(transforms, "sponsor", 200, 260)}">${sponsor}</g>`;
   } else {
     const nm = name
