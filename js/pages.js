@@ -134,7 +134,23 @@ function initProduct() {
   $("#customBtn").href = `customizer.html?id=${p.id}`;
 }
 
-/* ---------- CUSTOMIZER ---------- */
+/* ---------- CUSTOMIZER (Quartier Thaïlande Wizard Style) ---------- */
+function setWizardStep(step) {
+  $$(".step-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.step === String(step)),
+  );
+  $$(".step-content").forEach((p) =>
+    p.classList.toggle("active", p.dataset.stepPanel === String(step)),
+  );
+  if (step === 3 && window._csState) {
+    window._csState.view = "back";
+    if (window._csDraw) window._csDraw();
+  } else if ((step === 1 || step === 4) && window._csState) {
+    window._csState.view = "front";
+    if (window._csDraw) window._csDraw();
+  }
+}
+
 function initCustomizer() {
   const id = new URLSearchParams(location.search).get("id");
   const p = getProduct(id) || getProducts().find((x) => x.customizable);
@@ -145,9 +161,13 @@ function initCustomizer() {
     number: "",
     font: "bebas",
     textColor: "#f2f2f0",
+    chestLogo: "default",
+    sponsor: "default",
+    logoColor: "#f2f2f0",
     patch: "none",
     view: "front",
   };
+  window._csState = cs;
   const price = () =>
     p.price +
     (cs.name ? 400 : 0) +
@@ -167,9 +187,15 @@ function initCustomizer() {
       number: cs.number,
       font: cs.font,
       textColor: cs.textColor,
+      chestLogo: cs.chestLogo,
+      sponsor: cs.sponsor,
+      logoColor: cs.logoColor,
       patch: cs.patch,
     });
+    updateReviewSpecs();
   };
+  window._csDraw = draw;
+
   const summary = () => {
     $("#sumPrice").textContent = money(p.price);
     $("#sumExtras").textContent = money(
@@ -179,6 +205,44 @@ function initCustomizer() {
     );
     $("#sumTotal").textContent = money(price());
   };
+
+  const updateReviewSpecs = () => {
+    const rev = $("#reviewSpecs");
+    if (!rev) return;
+    const fontObj = FONTS.find((f) => f.id === cs.font) || FONTS[0];
+    const patchObj = PATCHES.find((x) => x.id === cs.patch) || PATCHES[0];
+    const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
+    const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
+
+    rev.innerHTML = `
+      <div class="spec-item"><span>القميص:</span><b>${esc(p.name)}</b></div>
+      <div class="spec-item"><span>اللون:</span><b>${esc(cs.color.name)}</b></div>
+      <div class="spec-item"><span>المقاس:</span><b>${cs.size ? esc(cs.size) : "<span style='color:var(--red)'>لم يتم الاختيار بعد</span>"}</b></div>
+      <div class="spec-item"><span>اسم اللاعب:</span><b>${esc(cs.name || "بدون اسم")}</b></div>
+      <div class="spec-item"><span>الرقم:</span><b>${esc(cs.number || "بدون رقم")}</b></div>
+      <div class="spec-item"><span>نوع الخط:</span><b>${esc(fontObj.name)}</b></div>
+      <div class="spec-item"><span>شعار الصدر:</span><b>${esc(chestObj.name)}</b></div>
+      <div class="spec-item"><span>الراعي الرئيسي:</span><b>${esc(sponsorObj.name)}</b></div>
+      <div class="spec-item"><span>رقعة الكم:</span><b>${esc(patchObj.name)}</b></div>
+    `;
+  };
+  // Wizard steps click events
+  $$(".step-btn").forEach((b) => {
+    b.onclick = () => setWizardStep(b.dataset.step);
+  });
+
+  // Vertical tabs (QT style)
+  $$("#qtCategoryTabs .v-tab").forEach((tb) => {
+    tb.onclick = () => {
+      $$("#qtCategoryTabs .v-tab").forEach((x) => x.classList.remove("active"));
+      tb.classList.add("active");
+      const cat = tb.dataset.cat;
+      $$(".qt-panel-v .cat-content").forEach((c) =>
+        c.classList.toggle("active", c.dataset.catContent === cat),
+      );
+    };
+  });
+
   $("#csProduct").innerHTML = `<div class="f-row"><label>القميص — Jersey</label>
     <select class="f-select" id="selProduct">${getProducts()
       .filter((x) => x.customizable)
@@ -189,6 +253,7 @@ function initCustomizer() {
       .join("")}</select></div>`;
   $("#selProduct").onchange = (e) =>
     (location.href = "customizer.html?id=" + e.target.value);
+
   $("#csColors").innerHTML = p.colors
     .map(
       (c, i) =>
@@ -204,6 +269,7 @@ function initCustomizer() {
         draw();
       }),
   );
+
   $("#csSizes").innerHTML = p.sizes
     .map((s) => `<button class="size" data-s="${s}">${s}</button>`)
     .join("");
@@ -213,8 +279,10 @@ function initCustomizer() {
         $$("#csSizes .size").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         cs.size = b.dataset.s;
+        draw();
       }),
   );
+
   $("#csFonts").innerHTML = FONTS.map(
     (f) =>
       `<button class="chip ${f.id === cs.font ? "active" : ""}" data-f="${f.id}">${f.name}</button>`,
@@ -225,13 +293,10 @@ function initCustomizer() {
         $$("#csFonts .chip").forEach((x) => x.classList.remove("active"));
         b.classList.add("active");
         cs.font = b.dataset.f;
-        if (cs.view !== "back") {
-          cs.view = "back";
-          updateViewButtons();
-        }
         draw();
       }),
   );
+
   $("#csTextColors").innerHTML = TEXT_COLORS.map(
     (c) =>
       `<div class="swatch ${c.hex === cs.textColor ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex};${c.hex === "#15151a" ? "outline-color:#555" : ""}"></div>`,
@@ -244,13 +309,43 @@ function initCustomizer() {
         );
         s.classList.add("active");
         cs.textColor = s.dataset.hex;
-        if (cs.view !== "back") {
-          cs.view = "back";
-          updateViewButtons();
-        }
         draw();
       }),
   );
+
+  // Logo Chest Select
+  $("#selChestLogo").innerHTML = CHEST_LOGOS.map(
+    (x) => `<option value="${x.id}">${x.name}</option>`,
+  ).join("");
+  $("#selChestLogo").onchange = (e) => {
+    cs.chestLogo = e.target.value;
+    draw();
+  };
+
+  // Sponsor Select
+  $("#selSponsor").innerHTML = SPONSORS.map(
+    (x) => `<option value="${x.id}">${x.name}</option>`,
+  ).join("");
+  $("#selSponsor").onchange = (e) => {
+    cs.sponsor = e.target.value;
+    draw();
+  };
+
+  // Logo Colors Swatches
+  $("#csLogoColors").innerHTML = TEXT_COLORS.map(
+    (c, i) =>
+      `<div class="swatch ${i === 0 ? "active" : ""}" data-hex="${c.hex}" data-name="${c.name}" title="${c.name}" style="background:${c.hex}"></div>`,
+  ).join("");
+  $$("#csLogoColors .swatch").forEach(
+    (s) =>
+      (s.onclick = () => {
+        $$("#csLogoColors .swatch").forEach((x) => x.classList.remove("active"));
+        s.classList.add("active");
+        cs.logoColor = s.dataset.hex;
+        draw();
+      }),
+  );
+
   $("#csPatches").innerHTML = PATCHES.map(
     (pt) => `<button class="chip" data-p="${pt.id}">${pt.name}</button>`,
   ).join("");
@@ -311,6 +406,11 @@ function initCustomizer() {
         patch: cs.patch,
       }),
     );
+    const fontObj = FONTS.find((f) => f.id === cs.font) || FONTS[0];
+    const patchObj = PATCHES.find((x) => x.id === cs.patch) || PATCHES[0];
+    const chestObj = CHEST_LOGOS.find((x) => x.id === cs.chestLogo) || CHEST_LOGOS[0];
+    const sponsorObj = SPONSORS.find((x) => x.id === cs.sponsor) || SPONSORS[0];
+
     addToCart({
       productId: p.id,
       name: p.name + " (مخصص)",
@@ -323,9 +423,10 @@ function initCustomizer() {
         color: cs.color.name,
         name: cs.name || "—",
         number: cs.number || "—",
-        font: FONTS.find((f) => f.id === cs.font).name,
-        textColor: TEXT_COLORS.find((c) => c.hex === cs.textColor).name,
-        patch: PATCHES.find((x) => x.id === cs.patch).name,
+        font: fontObj.name,
+        chestLogo: chestObj.name,
+        sponsor: sponsorObj.name,
+        patch: patchObj.name,
       },
     });
   };

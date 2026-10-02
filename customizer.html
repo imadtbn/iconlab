@@ -23,45 +23,142 @@
         <p>كل تغيير تظهر نتيجته فوراً على القميص — أمامي وخلفي.</p>
     </div>
 </div>
-<div class="container custom-layout">
-    <div class="custom-preview">
-        <div class="preview-stage" id="stage"></div>
-        <div class="view-toggle" id="viewToggle"><button class="active" data-v="front">Front</button><button
-                data-v="back">Back</button></div>
+<div class="container wizard-wrapper">
+    <!-- Step Bar -->
+    <div class="wizard-steps" id="wizardSteps">
+        <button class="step-btn active" data-step="1"><span class="num">1</span> <span class="lbl">القميص واللون</span></button>
+        <button class="step-btn" data-step="2"><span class="num">2</span> <span class="lbl">المقاس</span></button>
+        <button class="step-btn" data-step="3"><span class="num">3</span> <span class="lbl">الاسم والرقم</span></button>
+        <button class="step-btn" data-step="4"><span class="num">4</span> <span class="lbl">الشعارات والرقع</span></button>
+        <button class="step-btn" data-step="5"><span class="num">5</span> <span class="lbl">المعاينة والطلب</span></button>
     </div>
-    <div class="custom-panel">
-        <h2>✦ خصّص قميصك</h2>
-        <p class="sub">التخصيصات تظهر مباشرة على المعاينة</p>
-        <div id="csProduct"></div>
-        <div class="f-row"><label>اللون — Color</label>
-            <div class="swatches" id="csColors"></div>
+
+    <div class="custom-layout">
+        <div class="custom-preview">
+            <div class="preview-stage" id="stage"></div>
+            <div class="view-toggle" id="viewToggle">
+                <button class="active" data-v="front">Front</button>
+                <button data-v="back">Back</button>
+            </div>
         </div>
-        <div class="f-row"><label>المقاس — Size *</label>
-            <div class="sizes" id="csSizes"></div>
+
+        <div class="custom-panel">
+            <!-- Step 1: Jersey & Color -->
+            <div class="step-content active" data-step-panel="1">
+                <h2>1. اختر القميص واللون</h2>
+                <p class="sub">حدد نموذج القميص ولون الأساس</p>
+                <div id="csProduct"></div>
+                <div class="f-row" style="margin-top:18px">
+                    <label>اللون — Color</label>
+                    <div class="swatches" id="csColors"></div>
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-red btn-next" onclick="setWizardStep(2)">التالي: المقاس ←</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Size -->
+            <div class="step-content" data-step-panel="2">
+                <h2>2. اختر المقاس</h2>
+                <p class="sub">مقاسات احترافية مطابقة للجدول القياسي</p>
+                <div class="f-row">
+                    <label>المقاس — Size *</label>
+                    <div class="sizes" id="csSizes"></div>
+                </div>
+                <div style="margin-top:16px;background:rgba(255,255,255,0.03);padding:14px;border-radius:8px;font-size:12px;color:var(--grey)">
+                    💡 <b>نصيحة اختيار المقاس:</b> قمصان نسخة اللاعبين تكون بقصّة ضيقة (Slim Fit). إذا كنت تفضل الراحة اختر مقاساً أكبر.
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline btn-prev" onclick="setWizardStep(1)">← السابق</button>
+                    <button class="btn btn-red btn-next" onclick="setWizardStep(3)">التالي: الاسم والرقم ←</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Name & Number -->
+            <div class="step-content" data-step-panel="3">
+                <h2>3. الاسم والرقم والخط</h2>
+                <p class="sub">أضف لمستك الخاصة على ظهر القميص</p>
+                <div class="f-grid2">
+                    <div class="f-row"><label>اسم اللاعب (+400 DA)</label><input class="f-input" id="inName" maxlength="14" placeholder="مثال: NOUFEL"></div>
+                    <div class="f-row"><label>الرقم (+300 DA)</label><input class="f-input" id="inNumber" inputmode="numeric" maxlength="2" placeholder="10"></div>
+                </div>
+                <div class="f-row" style="margin-top:14px"><label>نوع الخط — Font</label>
+                    <div class="chips" id="csFonts"></div>
+                </div>
+                <div class="f-row" style="margin-top:14px"><label>لون الطباعة — Print Color</label>
+                    <div class="swatches" id="csTextColors"></div>
+                </div>
+                <div class="step-actions">
+                    <button class="btn btn-outline btn-prev" onclick="setWizardStep(2)">← السابق</button>
+                    <button class="btn btn-red btn-next" onclick="setWizardStep(4)">التالي: الشعارات والرقع ←</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Logos, Sponsors & Sleeve Badges (Quartier Thaïlande style category list) -->
+            <div class="step-content" data-step-panel="4">
+                <h2>4. الشعارات والرقع والشعارات الإضافية</h2>
+                <p class="sub">خصص شعار الصدر، الرعاة، ورقع الأكمام</p>
+
+                <div class="qt-sidebar-layout">
+                    <div class="qt-tabs-v" id="qtCategoryTabs">
+                        <button class="v-tab active" data-cat="chest">Logo Chest</button>
+                        <button class="v-tab" data-cat="sponsor">Sponsor</button>
+                        <button class="v-tab" data-cat="patch">Sleeve Patch</button>
+                        <button class="v-tab" data-cat="logocolor">Logo Color</button>
+                    </div>
+
+                    <div class="qt-panel-v">
+                        <!-- Logo Chest Category -->
+                        <div class="cat-content active" data-cat-content="chest">
+                            <label>شعار الصدر (Logo Chest)</label>
+                            <select class="f-select" id="selChestLogo"></select>
+                        </div>
+
+                        <!-- Sponsor Category -->
+                        <div class="cat-content" data-cat-content="sponsor">
+                            <label>الراعي الرئيسي (Sponsor)</label>
+                            <select class="f-select" id="selSponsor"></select>
+                        </div>
+
+                        <!-- Sleeve Patch Category -->
+                        <div class="cat-content" data-cat-content="patch">
+                            <label>رقعة الكم (Sleeve Badge / Patch) (+500 DA)</label>
+                            <div class="chips" id="csPatches"></div>
+                        </div>
+
+                        <!-- Logo Color Category -->
+                        <div class="cat-content" data-cat-content="logocolor">
+                            <label>لون الشعارات (Logo & Branding Color)</label>
+                            <div class="swatches" id="csLogoColors"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button class="btn btn-outline btn-prev" onclick="setWizardStep(3)">← السابق</button>
+                    <button class="btn btn-red btn-next" onclick="setWizardStep(5)">التالي: المعاينة النهائية ←</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Final Review & Cart -->
+            <div class="step-content" data-step-panel="5">
+                <h2>5. المعاينة وملخص التخصيص</h2>
+                <p class="sub">تأكد من جميع التفاصيل قبل الإضافة للسلة</p>
+
+                <div class="review-specs-box" id="reviewSpecs"></div>
+
+                <div class="price-summary">
+                    <div class="row"><span>سعر القميص الأساسي</span><span id="sumPrice"></span></div>
+                    <div class="row"><span>تكلفة التخصيص</span><span id="sumExtras"></span></div>
+                    <div class="total"><span>المجموع الإجمالي</span><span id="sumTotal"></span></div>
+                </div>
+
+                <div class="step-actions" style="margin-top:20px">
+                    <button class="btn btn-outline btn-prev" onclick="setWizardStep(4)">← تعديل التخصيص</button>
+                    <button class="btn btn-red" id="addCustom" style="padding:16px 28px;font-size:15px">أضف القميص المخصص للسلة 🛒</button>
+                </div>
+            </div>
         </div>
-        <div class="f-grid2">
-            <div class="f-row"><label>اسم اللاعب — Name (+400 DA)</label><input class="f-input" id="inName"
-                    maxlength="14" placeholder="مثال: NOUFEL"></div>
-            <div class="f-row"><label>الرقم — Number (+300 DA)</label><input class="f-input" id="inNumber"
-                    inputmode="numeric" maxlength="2" placeholder="10"></div>
-        </div>
-        <div class="f-row"><label>نوع الخط — Font</label>
-            <div class="chips" id="csFonts"></div>
-        </div>
-        <div class="f-row"><label>لون الاسم والرقم — Print Color</label>
-            <div class="swatches" id="csTextColors"></div>
-        </div>
-        <div class="f-row"><label>Patch إضافي (+500 DA)</label>
-            <div class="chips" id="csPatches"></div>
-        </div>
-        <div class="price-summary">
-            <div class="row"><span>سعر القميص</span><span id="sumPrice"></span></div>
-            <div class="row"><span>تكلفة التخصيص</span><span id="sumExtras"></span></div>
-            <div class="total"><span>الإجمالي</span><span id="sumTotal"></span></div>
-        </div>
-        <br><button class="btn btn-red btn-block" id="addCustom" style="padding:18px">أضف التصميم إلى السلة 🛒</button>
-        <p style="text-align:center;color:var(--grey);font-size:11px;margin-top:12px">✓ يُحفظ التصميم كصورة مع طلبك
-            لضمان الطباعة الدقيقة</p>
     </div>
 </div>
 
