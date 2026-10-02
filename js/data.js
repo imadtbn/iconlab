@@ -167,5 +167,4 @@ const WILAYAS = [
   "البويرة",
 ];
 const DELIVERY_FEE = 500,
-  FREE_OVER = 12000;
-const ADMIN_PASS = "iconlab2026";
+  FREE_OVER = 12000;
