@@ -2022,3 +2022,23 @@ tbody tr:hover {
     padding-top: 8px;
   }
 }
+
+/* ---------- DESIGN EXPORT ---------- */
+.design-export-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 18px;
+}
+.design-export-actions .btn {
+  min-height: 46px;
+}
+@media (max-width: 640px) {
+  .design-export-actions {
+    grid-template-columns: 1fr;
+  }
+  .design-export-actions .btn {
+    width: 100%;
+    min-height: 50px;
+  }
+}
